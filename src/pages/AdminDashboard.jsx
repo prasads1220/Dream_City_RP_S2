@@ -523,6 +523,7 @@ const AdminDashboard = () => {
   const scopedApps = isMainAdmin ? applications : applications.filter(a => a.type === userRole);
   const counts = {
     all: scopedApps.length,
+    civilian: scopedApps.filter(a => a.type === 'civilian').length,
     pending: scopedApps.filter(a => a.status === 'pending').length,
     scheduled: scopedApps.filter(a => a.status === 'scheduled').length,
     approved: scopedApps.filter(a => a.status === 'approved').length,
@@ -642,10 +643,16 @@ const AdminDashboard = () => {
         {activeTab === 'applications' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '40px' }}>
             {isMainAdmin && (
-              <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #A78BFA' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>Total Staff Members</div>
-                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff' }}>{users.length}</div>
-              </div>
+              <>
+                <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #A78BFA' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>Total Staff Members</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff' }}>{users.length}</div>
+                </div>
+                <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #e879f9' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>Civilian Applications</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#e879f9' }}>{counts.civilian}</div>
+                </div>
+              </>
             )}
             <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #F59E0B' }}>
               <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>Pending Applications</div>
