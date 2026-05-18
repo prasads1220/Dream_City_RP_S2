@@ -524,6 +524,9 @@ const AdminDashboard = () => {
   const counts = {
     all: scopedApps.length,
     civilian: scopedApps.filter(a => a.type === 'civilian').length,
+    police: scopedApps.filter(a => a.type === 'police').length,
+    ems: scopedApps.filter(a => a.type === 'ems').length,
+    mechanic: scopedApps.filter(a => a.type === 'mechanic').length,
     pending: scopedApps.filter(a => a.status === 'pending').length,
     scheduled: scopedApps.filter(a => a.status === 'scheduled').length,
     approved: scopedApps.filter(a => a.status === 'approved').length,
@@ -649,8 +652,20 @@ const AdminDashboard = () => {
                   <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff' }}>{users.length}</div>
                 </div>
                 <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #e879f9' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>Civilian Applications</div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>Civilian Apps</div>
                   <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#e879f9' }}>{counts.civilian}</div>
+                </div>
+                <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #3B82F6' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>Police Apps</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#3B82F6' }}>{counts.police}</div>
+                </div>
+                <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #EF4444' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>EMS Apps</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#EF4444' }}>{counts.ems}</div>
+                </div>
+                <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #F59E0B' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>Mechanic Apps</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#F59E0B' }}>{counts.mechanic}</div>
                 </div>
               </>
             )}
