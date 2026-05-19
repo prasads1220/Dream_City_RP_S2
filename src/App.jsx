@@ -15,7 +15,6 @@ import Team from './pages/Team';
 import Store from './pages/Store';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
-import Status from './pages/Status';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -54,7 +53,6 @@ function App() {
             <Route path="/store" element={<Store />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/status" element={<Status />} />
             
             {/* Public application route (No Login Required) */}
             <Route path="/apply" element={<Apply />} />

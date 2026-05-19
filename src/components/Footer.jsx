@@ -59,7 +59,6 @@ const Footer = () => {
                 { label: 'Home', path: '/' },
                 { label: 'Rules', path: '/rules' },
                 { label: 'Team', path: '/team' },
-                { label: 'Status', path: '/status' },
                 { label: 'Store', path: '/store' },
                 { label: 'Applications', path: '/apply' },
               ].map(link => (
