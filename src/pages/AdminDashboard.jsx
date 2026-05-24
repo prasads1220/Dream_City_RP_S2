@@ -11,6 +11,7 @@ import { getAllUsers, updateUserRole, signUp, createAdminAccount, fetchAdminsFro
 import { useAuth } from '../context/AuthContext';
 import { fetchLivePlayers, performPlayerAction, sendAnnouncement } from '../services/txAdminService';
 import axios from 'axios';
+import { createEvent, getAllEvents, deleteEvent, setActiveEvent } from '../services/eventService';
 
 const DEPT_QUESTIONS = {
   civilian: [
@@ -91,6 +92,23 @@ const AdminDashboard = () => {
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '', name: '', discordUsername: '', role: 'admin' });
   
+  // Event Management States
+  const [eventsList, setEventsList] = useState([]);
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    date: '',
+    type: 'car_race',
+    customBgUrl: '',
+    description: '',
+    active: false,
+    winners: {
+      first: { name: '', reward: '', details: '' },
+      second: { name: '', reward: '', details: '' },
+      third: { name: '', reward: '', details: '' }
+    }
+  });
+
   // Real-time app settings
   const [appSettings, setAppSettings] = useState({
     policeLocked: true,
@@ -121,10 +139,20 @@ const AdminDashboard = () => {
     return () => unsubscribe && unsubscribe();
   }, []);
 
+  const fetchEventsList = async () => {
+    try {
+      const data = await getAllEvents();
+      setEventsList(data || []);
+    } catch (err) {
+      console.error('Failed to load events in dashboard:', err);
+    }
+  };
+
   useEffect(() => { 
     fetchApps();
     fetchUsers();
     fetchPlayers();
+    fetchEventsList();
   }, []);
 
   const fetchPlayers = async () => {
@@ -134,6 +162,61 @@ const AdminDashboard = () => {
     } catch (err) {
       console.warn('Could not fetch live players:', err.message);
     }
+  };
+
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await createEvent(newEvent);
+      setToast({ type: 'success', message: 'Championship event added successfully!' });
+      setShowAddEvent(false);
+      setNewEvent({
+        title: '',
+        date: '',
+        type: 'car_race',
+        customBgUrl: '',
+        description: '',
+        active: false,
+        winners: {
+          first: { name: '', reward: '', details: '' },
+          second: { name: '', reward: '', details: '' },
+          third: { name: '', reward: '', details: '' }
+        }
+      });
+      await fetchEventsList();
+    } catch (err) {
+      setToast({ type: 'error', message: err.message || 'Failed to create event.' });
+    }
+    setLoading(false);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleDeleteEvent = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) return;
+    setActionLoading(id);
+    try {
+      await deleteEvent(id);
+      setEventsList(prev => prev.filter(e => e.id !== id));
+      setToast({ type: 'success', message: 'Event deleted successfully.' });
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to delete event.' });
+    }
+    setActionLoading(null);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleToggleEventActive = async (id) => {
+    setActionLoading(id);
+    try {
+      await setActiveEvent(id);
+      setToast({ type: 'success', message: 'Welcome popup activated for this event!' });
+      await fetchEventsList();
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to toggle active event.' });
+    }
+    setActionLoading(null);
+    setTimeout(() => setToast(null), 3000);
   };
 
   // Auto-refresh players when on server tab
@@ -625,6 +708,18 @@ const AdminDashboard = () => {
             }}
           >
             Live Server
+          </button>
+          <button 
+            onClick={() => setActiveTab('winners')}
+            style={{ 
+              padding: '16px 4px', background: 'none', border: 'none', cursor: 'pointer',
+              color: activeTab === 'winners' ? '#A78BFA' : '#64748b',
+              fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '2px',
+              borderBottom: activeTab === 'winners' ? '2px solid #A78BFA' : '2px solid transparent',
+              transition: 'all 0.3s'
+            }}
+          >
+            Winners Management
           </button>
           {/* Department Role Badge */}
           {!isMainAdmin && (
@@ -1242,7 +1337,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'staff' ? (
           /* Staff Management View */
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -1445,7 +1540,274 @@ const AdminDashboard = () => {
               </div>
             )}
           </div>
-        )}
+        ) : activeTab === 'winners' ? (
+          /* Winners Management View */
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontFamily: '"Outfit", sans-serif', fontSize: '1.5rem', fontWeight: 900 }}>Championship <span style={{ color: '#A78BFA' }}>Tournaments</span></h3>
+              <button 
+                onClick={() => setShowAddEvent(true)}
+                className="sc-btn" 
+                style={{ borderRadius: '12px', fontSize: '0.8rem', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <span>🏆</span> Register Tournament
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {eventsList.length === 0 ? (
+                <div className="sc-card" style={{ padding: '60px', textAlign: 'center', color: '#64748b', opacity: 0.6 }}>
+                  No tournaments registered yet. Create one to display winners!
+                </div>
+              ) : eventsList.map(event => (
+                <div key={event.id} className="sc-card" style={{ padding: '24px 32px', border: event.active ? '1px solid #A78BFA' : '1px solid rgba(255,255,255,0.02)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+                    
+                    {/* Event Info */}
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+                      <div style={{
+                        width: '48px', height: '48px', borderRadius: '14px',
+                        background: event.active ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.02)', 
+                        border: `1.5px solid ${event.active ? '#A78BFA' : 'rgba(255,255,255,0.1)'}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '1.5rem'
+                      }}>
+                        {event.type === 'car_race' ? '🏎️' : event.type === 'bike_race' ? '🏍️' : event.type === 'sky_race' ? '✈️' : '🏁'}
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                          <h4 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#fff' }}>{event.title}</h4>
+                          <span style={{ fontSize: '0.65rem', padding: '3px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
+                            {event.type.toUpperCase().replace('_', ' ')}
+                          </span>
+                          {event.active && (
+                            <span style={{
+                              fontSize: '0.6rem', padding: '3px 8px', borderRadius: '4px',
+                              background: 'rgba(16, 185, 129, 0.15)', color: '#10b981',
+                              border: '1px solid rgba(16, 185, 129, 0.3)', fontWeight: 800,
+                              textTransform: 'uppercase', letterSpacing: '0.5px'
+                            }}>
+                              Active Welcome Popup
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+                          📅 Event Date: {event.date}
+                        </div>
+                        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '8px', maxWidth: '550px', lineHeight: 1.5 }}>
+                          {event.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button 
+                        onClick={() => handleToggleEventActive(event.id)}
+                        disabled={actionLoading === event.id || event.active}
+                        className="sc-btn-outline"
+                        style={{
+                          borderRadius: '8px', fontSize: '0.7rem', padding: '8px 16px',
+                          color: event.active ? '#64748b' : '#A78BFA',
+                          borderColor: event.active ? 'rgba(255,255,255,0.05)' : 'rgba(167,139,250,0.3)',
+                          cursor: event.active ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        ⭐ {event.active ? 'Active' : 'Set Active'}
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteEvent(event.id)}
+                        disabled={actionLoading === event.id}
+                        className="sc-btn-outline"
+                        style={{ borderRadius: '8px', fontSize: '0.7rem', padding: '8px 12px', color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}
+                      >
+                        {actionLoading === event.id ? 'Deleting...' : '🗑️ Delete'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Winners preview */}
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px',
+                    marginTop: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px',
+                    border: '1px solid rgba(255,255,255,0.02)'
+                  }}>
+                    {/* 1st */}
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1.2rem' }}>🥇</span>
+                      <div>
+                        <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Champion</div>
+                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>{event.winners?.first?.name || 'N/A'}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#FFD700', fontWeight: 700 }}>{event.winners?.first?.reward || 'N/A'}</div>
+                      </div>
+                    </div>
+                    {/* 2nd */}
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1.2rem' }}>🥈</span>
+                      <div>
+                        <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>2nd Place</div>
+                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>{event.winners?.second?.name || 'N/A'}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#C0C0C0', fontWeight: 700 }}>{event.winners?.second?.reward || 'N/A'}</div>
+                      </div>
+                    </div>
+                    {/* 3rd */}
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1.2rem' }}>🥉</span>
+                      <div>
+                        <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>3rd Place</div>
+                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>{event.winners?.third?.name || 'N/A'}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#CD7F32', fontWeight: 700 }}>{event.winners?.third?.reward || 'N/A'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add Event Modal */}
+            {showAddEvent && (
+              <div style={{
+                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
+                padding: '24px'
+              }}>
+                <div className="sc-card" style={{ maxWidth: '750px', width: '100%', padding: '36px', maxHeight: '90vh', overflowY: 'auto' }}>
+                  <h2 style={{ fontFamily: '"Outfit", sans-serif', fontWeight: 900, fontSize: '1.8rem', marginBottom: '20px' }}>Register Championship Tournament</h2>
+                  <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    
+                    {/* General details grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 900, color: '#A78BFA', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>Event Title</label>
+                        <input 
+                          className="sc-input" placeholder="e.g. Los Santos Grand Prix" required 
+                          value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} 
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 900, color: '#A78BFA', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>Event Date</label>
+                        <input 
+                          type="date" className="sc-input" required 
+                          value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} 
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 900, color: '#A78BFA', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>Event Type / Background Theme</label>
+                        <select 
+                          className="sc-input" 
+                          value={newEvent.type} 
+                          onChange={e => setNewEvent({...newEvent, type: e.target.value})}
+                          style={{ cursor: 'pointer', outline: 'none' }}
+                        >
+                          <option value="car_race" style={{ background: '#0a0a0f' }}>🏎️ Car Race (Speedy purple grid)</option>
+                          <option value="bike_race" style={{ background: '#0a0a0f' }}>🏍️ Bike Race (Hot orange/yellow gravel)</option>
+                          <option value="sky_race" style={{ background: '#0a0a0f' }}>✈️ Sky Race (Sleek aerodynamic cyan)</option>
+                          <option value="custom" style={{ background: '#0a0a0f' }}>🖼️ Custom Background Image</option>
+                        </select>
+                      </div>
+                      {newEvent.type === 'custom' ? (
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 900, color: '#A78BFA', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>Custom Background Image URL</label>
+                          <input 
+                            className="sc-input" placeholder="e.g. https://domain.com/background.jpg" required 
+                            value={newEvent.customBgUrl} onChange={e => setNewEvent({...newEvent, customBgUrl: e.target.value})} 
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', paddingTop: '22px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', color: '#94a3b8', fontSize: '0.85rem' }}>
+                            <input 
+                              type="checkbox" 
+                              checked={newEvent.active} 
+                              onChange={e => setNewEvent({...newEvent, active: e.target.checked})}
+                              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                            />
+                            Make Active Welcome Popup immediately
+                          </label>
+                        </div>
+                      )}
+                    </div>
+
+                    {newEvent.type === 'custom' && (
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', color: '#94a3b8', fontSize: '0.85rem' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={newEvent.active} 
+                            onChange={e => setNewEvent({...newEvent, active: e.target.checked})}
+                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                          />
+                          Make Active Welcome Popup immediately
+                        </label>
+                      </div>
+                    )}
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 900, color: '#A78BFA', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>Event Description</label>
+                      <textarea 
+                        className="sc-input" placeholder="Add some context e.g. A high-speed night sprint through Vinewood hills with strict checkpoint restrictions." required 
+                        style={{ minHeight: '60px', resize: 'vertical' }}
+                        value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} 
+                      />
+                    </div>
+
+                    {/* Winners details */}
+                    <div>
+                      <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: '#A78BFA', letterSpacing: '2px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', marginBottom: '14px' }}>🏆 PODIUM WINNERS</h4>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        
+                        {/* 1st Place */}
+                        <div style={{ background: 'rgba(255, 215, 0, 0.03)', border: '1px solid rgba(255, 215, 0, 0.1)', padding: '16px', borderRadius: '12px' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#FFD700', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>🥇 1ST PLACE (CHAMPION)</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Character Name" required value={newEvent.winners.first.name} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, first: {...newEvent.winners.first, name: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Prize (e.g. Bugatti + $500k)" required value={newEvent.winners.first.reward} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, first: {...newEvent.winners.first, reward: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Vehicle / Notes (e.g. Nissan GT-R)" value={newEvent.winners.first.details} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, first: {...newEvent.winners.first, details: e.target.value}}})} />
+                          </div>
+                        </div>
+
+                        {/* 2nd Place */}
+                        <div style={{ background: 'rgba(192, 192, 192, 0.03)', border: '1px solid rgba(192, 192, 192, 0.1)', padding: '16px', borderRadius: '12px' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#C0C0C0', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>🥈 2ND PLACE</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Character Name" required value={newEvent.winners.second.name} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, second: {...newEvent.winners.second, name: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Prize (e.g. $250k)" required value={newEvent.winners.second.reward} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, second: {...newEvent.winners.second, reward: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Vehicle / Notes" value={newEvent.winners.second.details} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, second: {...newEvent.winners.second, details: e.target.value}}})} />
+                          </div>
+                        </div>
+
+                        {/* 3rd Place */}
+                        <div style={{ background: 'rgba(205, 127, 50, 0.03)', border: '1px solid rgba(205, 127, 50, 0.1)', padding: '16px', borderRadius: '12px' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#CD7F32', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>🥉 3RD PLACE</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Character Name" required value={newEvent.winners.third.name} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, third: {...newEvent.winners.third, name: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Prize (e.g. $100k)" required value={newEvent.winners.third.reward} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, third: {...newEvent.winners.third, reward: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Vehicle / Notes" value={newEvent.winners.third.details} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, third: {...newEvent.winners.third, details: e.target.value}}})} />
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                      <button type="submit" disabled={loading} className="sc-btn" style={{ flex: 1 }}>
+                        {loading ? 'Registering...' : '💾 Register Event'}
+                      </button>
+                      <button type="button" onClick={() => setShowAddEvent(false)} className="sc-btn-outline" style={{ flex: 1 }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
 
         {/* Interview Scheduling Modal */}
         {showScheduleModal && (

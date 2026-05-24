@@ -36,6 +36,12 @@ service cloud.firestore {
       allow read, write: if isStaff();
     }
 
+    // Race Events & Winners
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
     // System Settings (Global UI Locks)
     match /System/{document=**} {
       // Anyone can read Global UI Locks

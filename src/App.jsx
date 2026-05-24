@@ -13,6 +13,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import Rules from './pages/Rules';
 import Team from './pages/Team';
 import Store from './pages/Store';
+import Winners from './pages/Winners';
+import WinnersPopup from './components/WinnersPopup';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 
@@ -45,10 +47,12 @@ function App() {
         <ParticleBackground />
         <CarAnimation />
         <Navbar />
+        <WinnersPopup />
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/rules" element={<Rules />} />
+            <Route path="/winners" element={<Winners />} />
             <Route path="/team" element={<Team />} />
             <Route path="/store" element={<Store />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
