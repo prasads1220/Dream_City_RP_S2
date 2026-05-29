@@ -102,7 +102,7 @@ const AdminDashboard = () => {
   const [newEvent, setNewEvent] = useState({
     title: '',
     date: '',
-    type: 'car_race',
+    type: 'custom',
     customBgUrl: '',
     description: '',
     active: false,
@@ -197,7 +197,7 @@ const AdminDashboard = () => {
       setNewEvent({
         title: '',
         date: '',
-        type: 'car_race',
+        type: 'custom',
         customBgUrl: '',
         description: '',
         active: false,
@@ -1629,7 +1629,7 @@ const AdminDashboard = () => {
                   setNewEvent({
                     title: '',
                     date: '',
-                    type: 'car_race',
+                    type: 'custom',
                     customBgUrl: '',
                     description: '',
                     active: false,
@@ -1755,7 +1755,7 @@ const AdminDashboard = () => {
                           setNewEvent({
                             title: event.title || '',
                             date: event.date || '',
-                            type: event.type || 'car_race',
+                            type: event.type || 'custom',
                             customBgUrl: event.customBgUrl || '',
                             description: event.description || '',
                             active: event.active || false,
@@ -1918,9 +1918,6 @@ const AdminDashboard = () => {
                           onChange={e => setNewEvent({...newEvent, type: e.target.value})}
                           style={{ cursor: 'pointer', outline: 'none' }}
                         >
-                          <option value="car_race" style={{ background: '#0a0a0f' }}>🏎️ Car Race (Speedy purple grid)</option>
-                          <option value="bike_race" style={{ background: '#0a0a0f' }}>🏍️ Bike Race (Hot orange/yellow gravel)</option>
-                          <option value="sky_race" style={{ background: '#0a0a0f' }}>✈️ Sky Race (Sleek aerodynamic cyan)</option>
                           <option value="custom" style={{ background: '#0a0a0f' }}>🖼️ Custom Background Image</option>
                         </select>
                       </div>
