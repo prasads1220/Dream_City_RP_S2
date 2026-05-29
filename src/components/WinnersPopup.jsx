@@ -73,7 +73,7 @@ const WinnersPopup = () => {
     }, 400); // match animation speed
   };
 
-  if (!show || !activeEvent) return null;
+  if (!show || !activeEvent || !activeEvent.winners?.first?.name) return null;
 
   // Background styling mapping
   const themes = {

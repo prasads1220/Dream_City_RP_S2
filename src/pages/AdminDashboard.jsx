@@ -11,7 +11,7 @@ import { getAllUsers, updateUserRole, signUp, createAdminAccount, fetchAdminsFro
 import { useAuth } from '../context/AuthContext';
 import { fetchLivePlayers, performPlayerAction, sendAnnouncement } from '../services/txAdminService';
 import axios from 'axios';
-import { createEvent, getAllEvents, deleteEvent, setActiveEvent } from '../services/eventService';
+import { createEvent, getAllEvents, deleteEvent, setActiveEvent, updateEvent, getAllEventApplications, deleteEventApplication } from '../services/eventService';
 
 const DEPT_QUESTIONS = {
   civilian: [
@@ -94,6 +94,10 @@ const AdminDashboard = () => {
   
   // Event Management States
   const [eventsList, setEventsList] = useState([]);
+  const [eventApplications, setEventApplications] = useState([]);
+  const [appsLoading, setAppsLoading] = useState(false);
+  const [expandedApplicationsId, setExpandedApplicationsId] = useState(null);
+  const [editingEventId, setEditingEventId] = useState(null);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -102,6 +106,7 @@ const AdminDashboard = () => {
     customBgUrl: '',
     description: '',
     active: false,
+    published: true,
     winners: {
       first: { name: '', reward: '', details: '' },
       second: { name: '', reward: '', details: '' },
@@ -148,11 +153,23 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchEventApps = async () => {
+    setAppsLoading(true);
+    try {
+      const data = await getAllEventApplications();
+      setEventApplications(data || []);
+    } catch (err) {
+      console.error('Failed to load event applications:', err);
+    }
+    setAppsLoading(false);
+  };
+
   useEffect(() => { 
     fetchApps();
     fetchUsers();
     fetchPlayers();
     fetchEventsList();
+    fetchEventApps();
   }, []);
 
   const fetchPlayers = async () => {
@@ -168,9 +185,15 @@ const AdminDashboard = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await createEvent(newEvent);
-      setToast({ type: 'success', message: 'Championship event added successfully!' });
+      if (editingEventId) {
+        await updateEvent(editingEventId, newEvent);
+        setToast({ type: 'success', message: 'Event updated successfully!' });
+      } else {
+        await createEvent(newEvent);
+        setToast({ type: 'success', message: 'Event registered successfully!' });
+      }
       setShowAddEvent(false);
+      setEditingEventId(null);
       setNewEvent({
         title: '',
         date: '',
@@ -178,6 +201,7 @@ const AdminDashboard = () => {
         customBgUrl: '',
         description: '',
         active: false,
+        published: true,
         winners: {
           first: { name: '', reward: '', details: '' },
           second: { name: '', reward: '', details: '' },
@@ -186,9 +210,37 @@ const AdminDashboard = () => {
       });
       await fetchEventsList();
     } catch (err) {
-      setToast({ type: 'error', message: err.message || 'Failed to create event.' });
+      setToast({ type: 'error', message: err.message || 'Failed to save event.' });
     }
     setLoading(false);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleTogglePublish = async (id, currentPublished) => {
+    setActionLoading(id);
+    try {
+      const isPub = currentPublished !== false;
+      await updateEvent(id, { published: !isPub });
+      setToast({ type: 'success', message: `Event ${!isPub ? 'published' : 'moved to draft'} successfully!` });
+      await fetchEventsList();
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to update publication status.' });
+    }
+    setActionLoading(null);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleDeleteEventApp = async (appId) => {
+    if (!window.confirm('Are you sure you want to remove this application?')) return;
+    setActionLoading(appId);
+    try {
+      await deleteEventApplication(appId);
+      setEventApplications(prev => prev.filter(app => app.id !== appId));
+      setToast({ type: 'success', message: 'Application removed successfully.' });
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to remove application.' });
+    }
+    setActionLoading(null);
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -719,7 +771,7 @@ const AdminDashboard = () => {
               transition: 'all 0.3s'
             }}
           >
-            Winners Management
+            Events Management
           </button>
           {/* Department Role Badge */}
           {!isMainAdmin && (
@@ -1541,12 +1593,29 @@ const AdminDashboard = () => {
             )}
           </div>
         ) : activeTab === 'winners' ? (
-          /* Winners Management View */
+          /* Events Management View */
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontFamily: '"Outfit", sans-serif', fontSize: '1.5rem', fontWeight: 900 }}>Championship <span style={{ color: '#A78BFA' }}>Tournaments</span></h3>
+              <h3 style={{ fontFamily: '"Outfit", sans-serif', fontSize: '1.5rem', fontWeight: 900 }}>Championship <span style={{ color: '#A78BFA' }}>Events</span></h3>
               <button 
-                onClick={() => setShowAddEvent(true)}
+                onClick={() => {
+                  setEditingEventId(null);
+                  setNewEvent({
+                    title: '',
+                    date: '',
+                    type: 'car_race',
+                    customBgUrl: '',
+                    description: '',
+                    active: false,
+                    published: true,
+                    winners: {
+                      first: { name: '', reward: '', details: '' },
+                      second: { name: '', reward: '', details: '' },
+                      third: { name: '', reward: '', details: '' }
+                    }
+                  });
+                  setShowAddEvent(true);
+                }}
                 className="sc-btn" 
                 style={{ borderRadius: '12px', fontSize: '0.8rem', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}
               >
@@ -1557,7 +1626,7 @@ const AdminDashboard = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {eventsList.length === 0 ? (
                 <div className="sc-card" style={{ padding: '60px', textAlign: 'center', color: '#64748b', opacity: 0.6 }}>
-                  No tournaments registered yet. Create one to display winners!
+                  No tournaments registered yet. Create one to display events!
                 </div>
               ) : eventsList.map(event => (
                 <div key={event.id} className="sc-card" style={{ padding: '24px 32px', border: event.active ? '1px solid #A78BFA' : '1px solid rgba(255,255,255,0.02)' }}>
@@ -1580,6 +1649,18 @@ const AdminDashboard = () => {
                           <span style={{ fontSize: '0.65rem', padding: '3px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
                             {event.type.toUpperCase().replace('_', ' ')}
                           </span>
+                          
+                          {/* Publish Status Badge */}
+                          <span style={{
+                            fontSize: '0.6rem', padding: '3px 8px', borderRadius: '4px',
+                            background: event.published !== false ? 'rgba(167, 139, 250, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                            color: event.published !== false ? '#A78BFA' : '#64748b',
+                            border: `1px solid ${event.published !== false ? 'rgba(167, 139, 250, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                            fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px'
+                          }}>
+                            {event.published !== false ? '🌐 Published' : '📁 Draft'}
+                          </span>
+
                           {event.active && (
                             <span style={{
                               fontSize: '0.6rem', padding: '3px 8px', borderRadius: '4px',
@@ -1601,19 +1682,61 @@ const AdminDashboard = () => {
                     </div>
 
                     {/* Actions */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {/* Publish Toggle */}
+                      <button 
+                        onClick={() => handleTogglePublish(event.id, event.published)}
+                        disabled={actionLoading === event.id}
+                        className="sc-btn-outline"
+                        style={{
+                          borderRadius: '8px', fontSize: '0.7rem', padding: '8px 16px',
+                          color: '#A78BFA', borderColor: 'rgba(167,139,250,0.3)'
+                        }}
+                      >
+                        {event.published !== false ? '📁 Unpublish' : '🌐 Publish'}
+                      </button>
+
+                      {/* Edit Details */}
+                      <button 
+                        onClick={() => {
+                          setEditingEventId(event.id);
+                          setNewEvent({
+                            title: event.title || '',
+                            date: event.date || '',
+                            type: event.type || 'car_race',
+                            customBgUrl: event.customBgUrl || '',
+                            description: event.description || '',
+                            active: event.active || false,
+                            published: event.published !== false,
+                            winners: {
+                              first: { name: event.winners?.first?.name || '', reward: event.winners?.first?.reward || '', details: event.winners?.first?.details || '' },
+                              second: { name: event.winners?.second?.name || '', reward: event.winners?.second?.reward || '', details: event.winners?.second?.details || '' },
+                              third: { name: event.winners?.third?.name || '', reward: event.winners?.third?.reward || '', details: event.winners?.third?.details || '' }
+                            }
+                          });
+                          setShowAddEvent(true);
+                        }}
+                        className="sc-btn-outline"
+                        style={{
+                          borderRadius: '8px', fontSize: '0.7rem', padding: '8px 16px',
+                          color: '#F59E0B', borderColor: 'rgba(245,158,11,0.3)'
+                        }}
+                      >
+                        ✏️ Edit Details
+                      </button>
+
                       <button 
                         onClick={() => handleToggleEventActive(event.id)}
                         disabled={actionLoading === event.id || event.active}
                         className="sc-btn-outline"
                         style={{
                           borderRadius: '8px', fontSize: '0.7rem', padding: '8px 16px',
-                          color: event.active ? '#64748b' : '#A78BFA',
-                          borderColor: event.active ? 'rgba(255,255,255,0.05)' : 'rgba(167,139,250,0.3)',
+                          color: event.active ? '#64748b' : '#3B82F6',
+                          borderColor: event.active ? 'rgba(255,255,255,0.05)' : 'rgba(59,130,246,0.3)',
                           cursor: event.active ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        ⭐ {event.active ? 'Active' : 'Set Active'}
+                        ⭐ {event.active ? 'Active' : 'Set Welcome Popup'}
                       </button>
                       <button 
                         onClick={() => handleDeleteEvent(event.id)}
@@ -1626,45 +1749,101 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Winners preview */}
-                  <div style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px',
-                    marginTop: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px',
-                    border: '1px solid rgba(255,255,255,0.02)'
-                  }}>
-                    {/* 1st */}
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '1.2rem' }}>🥇</span>
-                      <div>
-                        <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Champion</div>
-                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>{event.winners?.first?.name || 'N/A'}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#FFD700', fontWeight: 700 }}>{event.winners?.first?.reward || 'N/A'}</div>
+                  {/* Expandable Player Applications */}
+                  <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
+                    <button
+                      onClick={() => setExpandedApplicationsId(expandedApplicationsId === event.id ? null : event.id)}
+                      className="sc-btn-outline"
+                      style={{
+                        padding: '6px 16px',
+                        fontSize: '0.72rem',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: expandedApplicationsId === event.id ? '#A78BFA' : '#94a3b8',
+                        borderColor: expandedApplicationsId === event.id ? 'rgba(167,139,250,0.3)' : 'rgba(255,255,255,0.08)'
+                      }}
+                    >
+                      📥 View Applications ({eventApplications.filter(app => app.eventId === event.id).length})
+                      <span>{expandedApplicationsId === event.id ? '▲' : '▼'}</span>
+                    </button>
+
+                    {expandedApplicationsId === event.id && (
+                      <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(0,0,0,0.25)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.02)' }}>
+                        {eventApplications.filter(app => app.eventId === event.id).length === 0 ? (
+                          <div style={{ fontSize: '0.8rem', color: '#64748b', padding: '8px 0' }}>No player applications submitted yet.</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {eventApplications.filter(app => app.eventId === event.id).map(app => (
+                              <div key={app.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                                <div style={{ display: 'flex', gap: '24px' }}>
+                                  <div>
+                                    <span style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>Character Name</span>
+                                    <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#fff' }}>{app.characterName}</span>
+                                  </div>
+                                  <div>
+                                    <span style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>Discord ID</span>
+                                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#A78BFA' }}>{app.discordId}</span>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteEventApp(app.id)}
+                                  disabled={actionLoading === app.id}
+                                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem' }}
+                                  title="Remove Application"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    {/* 2nd */}
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '1.2rem' }}>🥈</span>
-                      <div>
-                        <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>2nd Place</div>
-                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>{event.winners?.second?.name || 'N/A'}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#C0C0C0', fontWeight: 700 }}>{event.winners?.second?.reward || 'N/A'}</div>
-                      </div>
-                    </div>
-                    {/* 3rd */}
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '1.2rem' }}>🥉</span>
-                      <div>
-                        <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>3rd Place</div>
-                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>{event.winners?.third?.name || 'N/A'}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#CD7F32', fontWeight: 700 }}>{event.winners?.third?.reward || 'N/A'}</div>
-                      </div>
-                    </div>
+                    )}
                   </div>
+
+                  {/* Winners preview */}
+                  {!!(event.winners?.first?.name) && (
+                    <div style={{
+                      display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px',
+                      marginTop: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.02)'
+                    }}>
+                      {/* 1st */}
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🥇</span>
+                        <div>
+                          <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Champion</div>
+                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>{event.winners.first.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#FFD700', fontWeight: 700 }}>{event.winners.first.reward}</div>
+                        </div>
+                      </div>
+                      {/* 2nd */}
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🥈</span>
+                        <div>
+                          <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>2nd Place</div>
+                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>{event.winners.second.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#C0C0C0', fontWeight: 700 }}>{event.winners.second.reward}</div>
+                        </div>
+                      </div>
+                      {/* 3rd */}
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🥉</span>
+                        <div>
+                          <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>3rd Place</div>
+                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>{event.winners.third.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#CD7F32', fontWeight: 700 }}>{event.winners.third.reward}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
 
-            {/* Add Event Modal */}
+            {/* Add/Edit Event Modal */}
             {showAddEvent && (
               <div style={{
                 position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -1673,7 +1852,9 @@ const AdminDashboard = () => {
                 padding: '24px'
               }}>
                 <div className="sc-card" style={{ maxWidth: '750px', width: '100%', padding: '36px', maxHeight: '90vh', overflowY: 'auto' }}>
-                  <h2 style={{ fontFamily: '"Outfit", sans-serif', fontWeight: 900, fontSize: '1.8rem', marginBottom: '20px' }}>Register Championship Tournament</h2>
+                  <h2 style={{ fontFamily: '"Outfit", sans-serif', fontWeight: 900, fontSize: '1.8rem', marginBottom: '20px' }}>
+                    {editingEventId ? '✏️ Edit Championship Event' : '🏆 Register Championship Tournament'}
+                  </h2>
                   <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     
                     {/* General details grid */}
@@ -1746,6 +1927,19 @@ const AdminDashboard = () => {
                       </div>
                     )}
 
+                    {/* Publish immediately checkbox */}
+                    <div style={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', color: '#cbd5e1', fontSize: '0.85rem' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={newEvent.published !== false} 
+                          onChange={e => setNewEvent({...newEvent, published: e.target.checked})}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        Publish event on website immediately
+                      </label>
+                    </div>
+
                     <div>
                       <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 900, color: '#A78BFA', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>Event Description</label>
                       <textarea 
@@ -1757,7 +1951,7 @@ const AdminDashboard = () => {
 
                     {/* Winners details */}
                     <div>
-                      <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: '#A78BFA', letterSpacing: '2px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', marginBottom: '14px' }}>🏆 PODIUM WINNERS</h4>
+                      <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: '#A78BFA', letterSpacing: '2px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', marginBottom: '14px' }}>🏆 PODIUM WINNERS (OPTIONAL - FILL ONCE DECLARED)</h4>
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         
@@ -1765,8 +1959,8 @@ const AdminDashboard = () => {
                         <div style={{ background: 'rgba(255, 215, 0, 0.03)', border: '1px solid rgba(255, 215, 0, 0.1)', padding: '16px', borderRadius: '12px' }}>
                           <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#FFD700', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>🥇 1ST PLACE (CHAMPION)</div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Character Name" required value={newEvent.winners.first.name} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, first: {...newEvent.winners.first, name: e.target.value}}})} />
-                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Prize (e.g. Bugatti + $500k)" required value={newEvent.winners.first.reward} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, first: {...newEvent.winners.first, reward: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Character Name" value={newEvent.winners.first.name} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, first: {...newEvent.winners.first, name: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Prize (e.g. Bugatti + $500k)" value={newEvent.winners.first.reward} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, first: {...newEvent.winners.first, reward: e.target.value}}})} />
                             <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Vehicle / Notes (e.g. Nissan GT-R)" value={newEvent.winners.first.details} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, first: {...newEvent.winners.first, details: e.target.value}}})} />
                           </div>
                         </div>
@@ -1775,8 +1969,8 @@ const AdminDashboard = () => {
                         <div style={{ background: 'rgba(192, 192, 192, 0.03)', border: '1px solid rgba(192, 192, 192, 0.1)', padding: '16px', borderRadius: '12px' }}>
                           <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#C0C0C0', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>🥈 2ND PLACE</div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Character Name" required value={newEvent.winners.second.name} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, second: {...newEvent.winners.second, name: e.target.value}}})} />
-                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Prize (e.g. $250k)" required value={newEvent.winners.second.reward} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, second: {...newEvent.winners.second, reward: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Character Name" value={newEvent.winners.second.name} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, second: {...newEvent.winners.second, name: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Prize (e.g. $250k)" value={newEvent.winners.second.reward} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, second: {...newEvent.winners.second, reward: e.target.value}}})} />
                             <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Vehicle / Notes" value={newEvent.winners.second.details} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, second: {...newEvent.winners.second, details: e.target.value}}})} />
                           </div>
                         </div>
@@ -1785,8 +1979,8 @@ const AdminDashboard = () => {
                         <div style={{ background: 'rgba(205, 127, 50, 0.03)', border: '1px solid rgba(205, 127, 50, 0.1)', padding: '16px', borderRadius: '12px' }}>
                           <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#CD7F32', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>🥉 3RD PLACE</div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Character Name" required value={newEvent.winners.third.name} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, third: {...newEvent.winners.third, name: e.target.value}}})} />
-                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Prize (e.g. $100k)" required value={newEvent.winners.third.reward} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, third: {...newEvent.winners.third, reward: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Character Name" value={newEvent.winners.third.name} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, third: {...newEvent.winners.third, name: e.target.value}}})} />
+                            <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Prize (e.g. $100k)" value={newEvent.winners.third.reward} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, third: {...newEvent.winners.third, reward: e.target.value}}})} />
                             <input className="sc-input" style={{ padding: '10px 14px', fontSize: '0.85rem' }} placeholder="Vehicle / Notes" value={newEvent.winners.third.details} onChange={e => setNewEvent({...newEvent, winners: {...newEvent.winners, third: {...newEvent.winners.third, details: e.target.value}}})} />
                           </div>
                         </div>
@@ -1796,9 +1990,9 @@ const AdminDashboard = () => {
 
                     <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                       <button type="submit" disabled={loading} className="sc-btn" style={{ flex: 1 }}>
-                        {loading ? 'Registering...' : '💾 Register Event'}
+                        {loading ? 'Saving...' : (editingEventId ? '💾 Save Changes' : '💾 Register Event')}
                       </button>
-                      <button type="button" onClick={() => setShowAddEvent(false)} className="sc-btn-outline" style={{ flex: 1 }}>
+                      <button type="button" onClick={() => { setShowAddEvent(false); setEditingEventId(null); }} className="sc-btn-outline" style={{ flex: 1 }}>
                         Cancel
                       </button>
                     </div>

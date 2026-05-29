@@ -13,7 +13,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Rules from './pages/Rules';
 import Team from './pages/Team';
 import Store from './pages/Store';
-import Winners from './pages/Winners';
+import Events from './pages/Events';
 import WinnersPopup from './components/WinnersPopup';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
@@ -52,7 +52,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/rules" element={<Rules />} />
-            <Route path="/winners" element={<Winners />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/winners" element={<Events />} />
             <Route path="/team" element={<Team />} />
             <Route path="/store" element={<Store />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />

@@ -147,3 +147,55 @@ export const setActiveEvent = async (activeId) => {
     throw error;
   }
 };
+
+/**
+ * Submit an application to a specific event
+ * @param {string} eventId 
+ * @param {Object} applicationData 
+ */
+export const submitEventApplication = async (eventId, applicationData) => {
+  const docRef = await addDoc(collection(db, 'eventApplications'), {
+    eventId,
+    ...applicationData,
+    createdAt: serverTimestamp()
+  });
+  return docRef.id;
+};
+
+/**
+ * Fetch all applications submitted for events
+ */
+export const getAllEventApplications = async () => {
+  try {
+    const q = query(
+      collection(db, 'eventApplications'),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Failed to fetch event applications:', error);
+    // Fallback if ordering by 'createdAt' index is not yet built in Firestore
+    try {
+      const qFallback = query(collection(db, 'eventApplications'));
+      const snapshotFallback = await getDocs(qFallback);
+      return snapshotFallback.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => b.createdAt - a.createdAt);
+    } catch (err) {
+      console.error('All event applications fetch attempts failed:', err);
+      return [];
+    }
+  }
+};
+
+/**
+ * Delete a specific event application
+ * @param {string} id 
+ */
+export const deleteEventApplication = async (id) => {
+  await deleteDoc(doc(db, 'eventApplications', id));
+};
