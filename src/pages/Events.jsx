@@ -403,15 +403,6 @@ const Events = () => {
                     Registrations for this tournament are currently open. Enter your details to secure a spot grid.
                   </p>
                 </div>
-                
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', gap: '8px', fontSize: '0.8rem', color: '#cbd5e1' }}>
-                    <span>✔️</span> <span>Character and vehicle verification</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', fontSize: '0.8rem', color: '#cbd5e1' }}>
-                    <span>✔️</span> <span>Discord role coordination & timing allocation</span>
-                  </div>
-                </div>
 
                 <button 
                   onClick={() => handleOpenApplyModal(spotlightEvent)}

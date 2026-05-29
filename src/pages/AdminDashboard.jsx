@@ -1709,6 +1709,19 @@ const AdminDashboard = () => {
 
                     {/* Actions */}
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {/* View Registrations Button */}
+                      <button 
+                        onClick={() => setExpandedApplicationsId(expandedApplicationsId === event.id ? null : event.id)}
+                        className="sc-btn-outline"
+                        style={{
+                          borderRadius: '8px', fontSize: '0.7rem', padding: '8px 16px',
+                          color: expandedApplicationsId === event.id ? '#A78BFA' : '#94a3b8',
+                          borderColor: expandedApplicationsId === event.id ? 'rgba(167,139,250,0.3)' : 'rgba(255,255,255,0.08)'
+                        }}
+                      >
+                        👁️ View Registrations ({eventApplications.filter(app => app.eventId === event.id).length})
+                      </button>
+
                       {/* Download CSV Button */}
                       <button 
                         onClick={() => handleDownloadCSV(event)}
@@ -1719,7 +1732,7 @@ const AdminDashboard = () => {
                           boxShadow: '0 0 10px rgba(16, 185, 129, 0.2)'
                         }}
                       >
-                        📥 Download CSV ({eventApplications.filter(app => app.eventId === event.id).length})
+                        📥 Download CSV
                       </button>
 
                       {/* Publish Toggle */}
@@ -1787,6 +1800,42 @@ const AdminDashboard = () => {
                       </button>
                     </div>
                   </div>
+
+                  {/* Expandable Player Applications List */}
+                  {expandedApplicationsId === event.id && (
+                    <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
+                      <div style={{ padding: '16px', background: 'rgba(0,0,0,0.25)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.02)' }}>
+                        {eventApplications.filter(app => app.eventId === event.id).length === 0 ? (
+                          <div style={{ fontSize: '0.8rem', color: '#64748b', padding: '8px 0' }}>No player registrations yet.</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {eventApplications.filter(app => app.eventId === event.id).map(app => (
+                              <div key={app.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                                <div style={{ display: 'flex', gap: '24px' }}>
+                                  <div>
+                                    <span style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>Character Name</span>
+                                    <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#fff' }}>{app.characterName}</span>
+                                  </div>
+                                  <div>
+                                    <span style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>Discord ID</span>
+                                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#A78BFA' }}>{app.discordId}</span>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteEventApp(app.id)}
+                                  disabled={actionLoading === app.id}
+                                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem' }}
+                                  title="Remove Registration"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Winners preview */}
                   {!!(event.winners?.first?.name) && (
