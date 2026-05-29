@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
-import { getAllEvents, submitEventApplication } from '../services/eventService';
+import { getAllEvents, submitEventApplication, getAllEventApplications } from '../services/eventService';
 import confetti from 'canvas-confetti';
 
 const Events = () => {
   const [events, setEvents] = useState([]);
+  const [eventApplications, setEventApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
+  
+  // Custom spotlight event state (when clicking past events)
+  const [selectedSpotlightEvent, setSelectedSpotlightEvent] = useState(null);
   
   // Application modal states
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -21,6 +25,8 @@ const Events = () => {
     try {
       const data = await getAllEvents();
       setEvents(data || []);
+      const apps = await getAllEventApplications();
+      setEventApplications(apps || []);
     } catch (err) {
       console.error('Failed to load events on Events page:', err);
     }
@@ -126,7 +132,8 @@ const Events = () => {
   const publishedEvents = events.filter(e => e.published !== false);
 
   // Active / Spotlight Event is the first 'active' event, or just the latest event
-  const spotlightEvent = publishedEvents.find(e => e.active) || publishedEvents[0];
+  const baseSpotlightEvent = publishedEvents.find(e => e.active) || publishedEvents[0];
+  const spotlightEvent = selectedSpotlightEvent || baseSpotlightEvent;
   const pastEvents = publishedEvents.filter(e => e.id !== spotlightEvent?.id);
 
   // Filter events
@@ -501,6 +508,10 @@ const Events = () => {
                   return (
                     <div 
                       key={event.id}
+                      onClick={() => {
+                        setSelectedSpotlightEvent(event);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
                       className="sc-card dc-winners-card"
                       style={{
                         ...customCardBg,
@@ -512,6 +523,7 @@ const Events = () => {
                         gap: '24px',
                         transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                         boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
+                        cursor: 'pointer'
                       }}
                       onMouseEnter={e => {
                         e.currentTarget.style.borderColor = theme.accent;
@@ -525,15 +537,25 @@ const Events = () => {
                       <div>
                         {/* Card Header */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                          <span style={{
-                            fontSize: '0.62rem', fontWeight: 900,
-                            padding: '3px 10px', borderRadius: '4px',
-                            background: `${theme.accent}15`, color: theme.accent,
-                            border: `1px solid ${theme.accent}30`,
-                            textTransform: 'uppercase', letterSpacing: '1px'
-                          }}>
-                            {theme.badge}
-                          </span>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{
+                              fontSize: '0.62rem', fontWeight: 900,
+                              padding: '3px 10px', borderRadius: '4px',
+                              background: `${theme.accent}15`, color: theme.accent,
+                              border: `1px solid ${theme.accent}30`,
+                              textTransform: 'uppercase', letterSpacing: '1px'
+                            }}>
+                              {theme.badge}
+                            </span>
+                            <span style={{
+                              fontSize: '0.62rem', fontWeight: 800,
+                              padding: '3px 10px', borderRadius: '4px',
+                              background: 'rgba(255,255,255,0.03)', color: '#94a3b8',
+                              border: '1px solid rgba(255,255,255,0.08)'
+                            }}>
+                              📝 {eventApplications.filter(app => app.eventId === event.id).length} Entries
+                            </span>
+                          </div>
                           <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
                             {event.date}
                           </span>
@@ -559,50 +581,19 @@ const Events = () => {
                         </p>
                       </div>
 
-                      {/* Winners breakdown row OR open applications alert */}
+                      {/* Winners breakdown row OR registrations count */}
                       {openForApplications ? (
-                        /* Open applications placeholder inside card */
+                        /* Open applications indicator */
                         <div style={{
                           background: 'rgba(167, 139, 250, 0.03)',
                           borderRadius: '12px',
                           padding: '16px',
                           border: '1px solid rgba(167, 139, 250, 0.1)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '12px',
-                          alignItems: 'center',
                           textAlign: 'center'
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '1.1rem' }}>📝</span>
-                            <span style={{ fontSize: '0.78rem', fontWeight: 900, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                              Registration Open
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => handleOpenApplyModal(event)}
-                            className="sc-btn"
-                            style={{
-                              width: '100%',
-                              padding: '8px 16px',
-                              fontSize: '0.7rem',
-                              background: 'rgba(167, 139, 250, 0.12)',
-                              color: '#A78BFA',
-                              border: '1px solid rgba(167, 139, 250, 0.3)',
-                              borderRadius: '8px',
-                              fontWeight: 800
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.background = '#A78BFA';
-                              e.currentTarget.style.color = '#000';
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.background = 'rgba(167, 139, 250, 0.12)';
-                              e.currentTarget.style.color = '#A78BFA';
-                            }}
-                          >
-                            Apply to Race
-                          </button>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            🔥 Open for Entry (Click to Apply)
+                          </span>
                         </div>
                       ) : (
                         /* Winners Columns */
