@@ -201,11 +201,26 @@ const Events = () => {
             opacity: 0.08, pointerEvents: 'none'
           }} />
 
-          <div className="sc-container" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+          <div className="sc-container" style={{ 
+            display: 'grid', 
+            gridTemplateColumns: hasWinnersDeclared(spotlightEvent) ? '1fr 1fr' : '1fr', 
+            gap: '48px', 
+            alignItems: 'center', 
+            position: 'relative', 
+            zIndex: 10 
+          }}>
             
             {/* Left Column: Event details */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} className="winners-hero-info">
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '16px',
+              alignItems: hasWinnersDeclared(spotlightEvent) ? 'flex-start' : 'center',
+              textAlign: hasWinnersDeclared(spotlightEvent) ? 'left' : 'center',
+              margin: hasWinnersDeclared(spotlightEvent) ? '0' : '0 auto',
+              maxWidth: hasWinnersDeclared(spotlightEvent) ? 'none' : '650px'
+            }} className="winners-hero-info">
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: hasWinnersDeclared(spotlightEvent) ? 'flex-start' : 'center' }}>
                 <span 
                   onClick={hasWinnersDeclared(spotlightEvent) ? triggerCelebrate : undefined}
                   style={{
@@ -229,7 +244,8 @@ const Events = () => {
                 fontSize: 'clamp(2rem, 5vw, 3.2rem)',
                 fontWeight: 900,
                 color: '#fff',
-                lineHeight: 1.1
+                lineHeight: 1.1,
+                textAlign: hasWinnersDeclared(spotlightEvent) ? 'left' : 'center'
               }}>
                 {spotlightEvent.title}
               </h1>
@@ -238,12 +254,14 @@ const Events = () => {
                 color: '#94a3b8',
                 fontSize: '1.05rem',
                 lineHeight: 1.7,
-                maxWidth: '520px'
+                maxWidth: '520px',
+                textAlign: hasWinnersDeclared(spotlightEvent) ? 'left' : 'center',
+                margin: hasWinnersDeclared(spotlightEvent) ? '0' : '0 auto'
               }}>
                 {spotlightEvent.description}
               </p>
 
-              <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '16px', justifyContent: hasWinnersDeclared(spotlightEvent) ? 'flex-start' : 'center' }}>
                 {hasWinnersDeclared(spotlightEvent) ? (
                   <button onClick={triggerCelebrate} className="sc-btn" style={{ padding: '12px 28px', fontSize: '0.75rem' }}>
                     Celebrate Winners! 🎉
@@ -256,8 +274,8 @@ const Events = () => {
               </div>
             </div>
 
-            {/* Right Column: 3D Podium OR Registration Form Call-to-action */}
-            {hasWinnersDeclared(spotlightEvent) ? (
+            {/* Right Column: 3D Podium (only shown if winners are declared) */}
+            {hasWinnersDeclared(spotlightEvent) && (
               /* Podium Columns */
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '12px', width: '100%', perspective: '1000px' }} className="winners-hero-podium">
                 
@@ -379,48 +397,6 @@ const Events = () => {
                 )}
 
               </div>
-            ) : (
-              /* Application Call-to-action details */
-              <div 
-                className="sc-card" 
-                style={{
-                  padding: '32px',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  background: 'rgba(255, 255, 255, 0.01)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  borderRadius: '24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '20px',
-                  boxShadow: `0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px ${spotlightTheme.accent}10`
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: '1.5rem', display: 'block', marginBottom: '8px' }}>🏁</span>
-                  <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff' }}>Be part of the race!</h3>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.5, marginTop: '6px' }}>
-                    Registrations for this tournament are currently open. Enter your details to secure a spot grid.
-                  </p>
-                </div>
-
-                <button 
-                  onClick={() => handleOpenApplyModal(spotlightEvent)}
-                  className="sc-btn"
-                  style={{
-                    width: '100%',
-                    padding: '12px 20px',
-                    fontSize: '0.8rem',
-                    background: spotlightTheme.accent,
-                    color: '#000',
-                    fontWeight: 900,
-                    borderRadius: '12px',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  📝 Enter Application Form
-                </button>
-              </div>
             )}
           </div>
         </section>
@@ -448,42 +424,18 @@ const Events = () => {
                 </h2>
                 <p style={{ color: '#94a3b8', fontSize: '0.95rem' }}>Browse current schedules, register to race, and check podium details</p>
               </div>
-
-              {/* Tabs */}
-              <div style={{ display: 'flex', gap: '4px', background: 'rgba(8,8,12,0.6)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                {[
-                  { id: 'all', label: '🏁 All Events' },
-                  { id: 'car_race', label: '🏎️ Car Races' },
-                  { id: 'bike_race', label: '🏍️ Bike Races' },
-                  { id: 'sky_race', label: '✈️ Sky Races' },
-                ].map(filterTab => (
-                  <button 
-                    key={filterTab.id}
-                    onClick={() => setActiveFilter(filterTab.id)}
-                    style={{
-                      padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                      fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '1px',
-                      transition: 'all 0.2s',
-                      background: activeFilter === filterTab.id ? '#A78BFA' : 'transparent',
-                      color: activeFilter === filterTab.id ? '#000' : 'rgba(255,255,255,0.45)',
-                    }}
-                  >
-                    {filterTab.label}
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Timelines Grid */}
-            {filteredPastEvents.length === 0 ? (
+            {pastEvents.length === 0 ? (
               <div className="sc-card" style={{ padding: '80px', textAlign: 'center', opacity: 0.4 }}>
                 <p style={{ fontFamily: '"Orbitron", sans-serif', fontWeight: 800, letterSpacing: '1.5px', color: '#94a3b8' }}>
-                  No historical matches found for this category.
+                  No historical matches found.
                 </p>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '28px' }}>
-                {filteredPastEvents.map(event => {
+                {pastEvents.map(event => {
                   const theme = themes[event.type] || themes.car_race;
                   
                   const customCardBg = event.type === 'custom' && event.customBgUrl
