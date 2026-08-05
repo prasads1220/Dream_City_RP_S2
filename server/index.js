@@ -13,6 +13,11 @@ const PORT = process.env.PORT || 5000;
 app.use(cors()); // Simplified to allow all for production stability
 app.use(express.json());
 
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'online' });
+});
+
 // Initialize Firebase Admin
 try {
   const fs = require('fs');

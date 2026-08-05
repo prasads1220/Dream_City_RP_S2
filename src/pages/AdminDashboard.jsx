@@ -980,7 +980,8 @@ const AdminDashboard = () => {
               {[
                 { id: 'police', label: 'Police', locked: appSettings.policeLocked, color: '#3B82F6' },
                 { id: 'ems', label: 'EMS', locked: appSettings.emsLocked, color: '#EF4444' },
-                { id: 'mechanic', label: 'Mechanic', locked: appSettings.mechanicLocked, color: '#F59E0B' }
+                { id: 'mechanic', label: 'Mechanic', locked: appSettings.mechanicLocked, color: '#F59E0B' },
+                { id: 'doj', label: 'DOJ', locked: appSettings.dojLocked, color: '#10B981' }
               ].map(dept => (
                 <div key={dept.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.4)', padding: '10px 16px', borderRadius: '10px', border: `1px solid ${dept.color}30` }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
