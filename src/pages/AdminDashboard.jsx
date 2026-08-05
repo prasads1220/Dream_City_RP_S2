@@ -853,6 +853,10 @@ const AdminDashboard = () => {
                   <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>Mechanic Apps</div>
                   <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#F59E0B' }}>{counts.mechanic}</div>
                 </div>
+                <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #10B981' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>DOJ Apps</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#10B981' }}>{counts.doj}</div>
+                </div>
               </>
             )}
             <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #F59E0B' }}>
@@ -956,6 +960,7 @@ const AdminDashboard = () => {
                   <option value="police">Police Dept</option>
                   <option value="ems">EMS</option>
                   <option value="mechanic">Mechanic</option>
+                  <option value="doj">DOJ</option>
                 </select>
               ) : (
                 <span style={{
