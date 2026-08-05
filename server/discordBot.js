@@ -56,6 +56,7 @@ const DEPARTMENT_ROLES = {
     }
   },
   doj: {
+    base: '', // No specific base role provided
     ranks: {
       'Chief Justice': '1529050716780367964',
       'Attorney General': '1530221577218687197',
@@ -188,7 +189,7 @@ function createStatusEmbed(type = '', status, name, discordId, metadata = {}) {
     }
   } else if (lowType === 'doj') {
     if (isApproved) {
-      gifUrl = APPROVED_GIF;
+      gifUrl = APPROVED_GIF; // fallback since no custom DOJ gif is mentioned
     } else if (!isScheduled) {
       gifUrl = REJECTED_GIF;
     }
@@ -278,7 +279,7 @@ const DEPARTMENT_CHANNELS = {
   police: '1493620877231915150',
   ems: '1493620878938734662',
   mechanic: '1493620879798567035',
-  doj: '1534530812731592840'
+  doj: '1498015267987521616'
 };
 
 /**
@@ -304,7 +305,12 @@ async function sendChannelNotification(type, status, name, discordId, metadata =
     }
 
     const embed = createStatusEmbed(type, status, name, discordId, metadata);
-    await channel.send({ embeds: [embed] });
+    let content = undefined;
+    if (type && type.toLowerCase() === 'doj') {
+      content = '<@&1534530812731592840>';
+    }
+    
+    await channel.send({ content, embeds: [embed] });
     
     console.log(`📢 Channel notification sent to #${channel.name} for ${name} (${status})`);
     return { success: true };
@@ -331,11 +337,9 @@ async function sendNewApplicationNotification(name, discordId, type) {
   try {
     let channelId = '1498015267987521616'; // Default admin log channel
     
-    // Route applications to specific channel if provided
+    // Route EMS applications to specific channel if provided
     if (type && type.toLowerCase() === 'ems') {
       channelId = '1500509643796119673';
-    } else if (type && type.toLowerCase() === 'doj') {
-      channelId = '1534530579209654423';
     }
 
     const channel = await client.channels.fetch(channelId);
@@ -359,7 +363,12 @@ async function sendNewApplicationNotification(name, discordId, type) {
       footer: { text: 'Dream City Roleplay S2 — Whitelist System' }
     };
 
-    await channel.send({ embeds: [embed] });
+    let content = undefined;
+    if (type && type.toLowerCase() === 'doj') {
+      content = '<@&1534530579209654423>';
+    }
+
+    await channel.send({ content, embeds: [embed] });
     console.log(`📢 New application notification sent to #${channel.name} for ${name}`);
     return { success: true };
   } catch (error) {

@@ -46,10 +46,8 @@ const DEPT_QUESTIONS = {
   ],
   doj: [
     { id: 'doj1', label: 'Why do you want to join the Department of Justice?' },
-    { id: 'doj2', label: 'What responsibilities do you believe a DOJ member has within the city?' },
-    { id: 'doj3', label: 'What qualities make you a suitable candidate for the Department of Justice?' },
-    { id: 'doj4', label: 'How would you ensure fair roleplay while performing DOJ duties?' },
-    { id: 'doj5', label: 'Are you willing to attend DOJ meetings, training sessions, and court proceedings when required?' }
+    { id: 'doj2', label: 'Do you have prior experience in legal roleplay? Please explain.' },
+    { id: 'doj3', label: 'Select the position you are applying for:', options: ['Chief Justice', 'Attorney General', 'District Attorney', 'Public Defender', 'Legal Intern'] }
   ]
 };
 
@@ -260,14 +258,13 @@ const Apply = () => {
       const isDuplicate = apps.some(app => app.type === appType && app.status !== 'rejected');
       
       const userRole = userData?.role?.toLowerCase() || '';
-      const isMember = ['civilian', 'police', 'pd', 'ems', 'mechanic', 'doj'].includes(userRole);
+      const isMember = ['civilian', 'police', 'pd', 'ems', 'mechanic'].includes(userRole);
       let isRoleDuplicate = false;
 
       if (appType === 'civilian' && isMember) isRoleDuplicate = true;
       if (appType === 'police' && (userRole === 'police' || userRole === 'pd')) isRoleDuplicate = true;
       if (appType === 'ems' && userRole === 'ems') isRoleDuplicate = true;
       if (appType === 'mechanic' && userRole === 'mechanic') isRoleDuplicate = true;
-      if (appType === 'doj' && userRole === 'doj') isRoleDuplicate = true;
       
       if (isDuplicate || isRoleDuplicate) {
         throw new Error(`You have already submitted a ${appType} application or already have this role.`);
@@ -344,7 +341,7 @@ const Apply = () => {
                 
                 // Role-based status for existing members
                 const userRole = userData?.role?.toLowerCase() || '';
-                const isMember = ['civilian', 'police', 'pd', 'ems', 'mechanic', 'doj'].includes(userRole);
+                const isMember = ['civilian', 'police', 'pd', 'ems', 'mechanic'].includes(userRole);
                 if (!existingApp) {
                   // If user is already a member of any dept, they are approved for Civilian
                   if (dept.id === 'civilian' && isMember) {
@@ -353,8 +350,7 @@ const Apply = () => {
                   // Check for specific department roles
                   if ((dept.id === 'police' && (userRole === 'police' || userRole === 'pd')) ||
                       (dept.id === 'ems' && userRole === 'ems') ||
-                      (dept.id === 'mechanic' && userRole === 'mechanic') ||
-                      (dept.id === 'doj' && userRole === 'doj')) {
+                      (dept.id === 'mechanic' && userRole === 'mechanic')) {
                     existingApp = { status: 'approved' };
                   }
                 }
@@ -500,16 +496,30 @@ const Apply = () => {
                             </span>
                           )}
                         </label>
-                        <textarea 
-                          className="sc-input" 
-                          value={formData.answers[q.id] || ''} 
-                          onChange={e => setFormData({
-                            ...formData, 
-                            answers: { ...formData.answers, [q.id]: e.target.value }
-                          })} 
-                          rows={3} 
-                          style={{ resize: 'none' }} 
-                        />
+                        {q.options ? (
+                          <select 
+                            className="sc-input" 
+                            value={formData.answers[q.id] || ''} 
+                            onChange={e => setFormData({
+                              ...formData, 
+                              answers: { ...formData.answers, [q.id]: e.target.value }
+                            })}
+                          >
+                            <option value="">-- Select an option --</option>
+                            {q.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                          </select>
+                        ) : (
+                          <textarea 
+                            className="sc-input" 
+                            value={formData.answers[q.id] || ''} 
+                            onChange={e => setFormData({
+                              ...formData, 
+                              answers: { ...formData.answers, [q.id]: e.target.value }
+                            })} 
+                            rows={3} 
+                            style={{ resize: 'none' }} 
+                          />
+                        )}
                       </div>
                     ))}
                   </div>

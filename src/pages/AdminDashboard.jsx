@@ -50,6 +50,11 @@ const DEPT_QUESTIONS = {
     { id: 'mech3', label: 'A customer comes in angry and demands instant service. What do you do?' },
     { id: 'mech4', label: 'Two vehicles arrive at once: one flat tire, one engine smoking. Which do you help first?' },
     { id: 'mech5', label: 'A police vehicle needs emergency repairs during an active scene. What do you do?' }
+  ],
+  doj: [
+    { id: 'doj1', label: 'Why do you want to join the Department of Justice?' },
+    { id: 'doj2', label: 'Do you have prior experience in legal roleplay? Please explain.' },
+    { id: 'doj3', label: 'Select the position you are applying for:', format: 'Chief Justice, Attorney General, District Attorney, Public Defender, Legal Intern' }
   ]
 };
 
@@ -69,8 +74,7 @@ const DEPT_RANKS = {
     'Sr Mechanic', 'Jr Mechanic', 'Recruit'
   ],
   doj: [
-    'Chief Justice', 'Attorney General', 'District Attorney', 
-    'Public Defender', 'Legal Intern'
+    'Chief Justice', 'Attorney General', 'District Attorney', 'Public Defender', 'Legal Intern'
   ]
 };
 
@@ -544,7 +548,7 @@ const AdminDashboard = () => {
       const selectedRole = newAdmin.role || 'admin';
       await createAdminAccount({ email, password, name, discordUsername, role: selectedRole });
       
-      const roleLabel = { admin: 'Main Admin', police: 'Police', ems: 'EMS', mechanic: 'Mechanic', doj: 'DOJ' }[selectedRole] || selectedRole;
+      const roleLabel = { admin: 'Main Admin', police: 'Police', ems: 'EMS', mechanic: 'Mechanic' }[selectedRole] || selectedRole;
       setToast({ type: 'success', message: `${roleLabel} account for ${name} created successfully!` });
       setShowAddAdmin(false);
       setNewAdmin({ email: '', password: '', name: '', discordUsername: '', role: 'admin' });
@@ -642,7 +646,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const STAFF_ROLES = ['admin', 'police', 'ems', 'mechanic', 'doj'];
+  const STAFF_ROLES = ['admin', 'police', 'ems', 'mechanic'];
   const filteredAdmins = users.filter(u => {
     const isStaff = STAFF_ROLES.includes(u.role);
     const searchLower = searchQuery.toLowerCase();
@@ -709,7 +713,7 @@ const AdminDashboard = () => {
     police: '#3B82F6',
     ems: '#EF4444',
     mechanic: '#F59E0B',
-    doj: '#8B5CF6'
+    doj: '#10B981'
   };
 
   if (loading) return (
@@ -812,9 +816,9 @@ const AdminDashboard = () => {
               <span style={{
                 padding: '6px 16px', borderRadius: '20px', fontSize: '0.65rem',
                 fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px',
-                background: userRole === 'police' ? 'rgba(59,130,246,0.15)' : userRole === 'ems' ? 'rgba(239,68,68,0.15)' : userRole === 'mechanic' ? 'rgba(245,158,11,0.15)' : 'rgba(139,92,246,0.15)',
-                color: userRole === 'police' ? '#3B82F6' : userRole === 'ems' ? '#EF4444' : userRole === 'mechanic' ? '#F59E0B' : '#8B5CF6',
-                border: `1px solid ${userRole === 'police' ? '#3B82F640' : userRole === 'ems' ? '#EF444440' : userRole === 'mechanic' ? '#F59E0B40' : '#8B5CF640'}`,
+                background: userRole === 'police' ? 'rgba(59,130,246,0.15)' : userRole === 'ems' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                color: userRole === 'police' ? '#3B82F6' : userRole === 'ems' ? '#EF4444' : '#F59E0B',
+                border: `1px solid ${userRole === 'police' ? '#3B82F640' : userRole === 'ems' ? '#EF444440' : '#F59E0B40'}`,
               }}>
                 {deptLabel} Department
               </span>
@@ -846,10 +850,6 @@ const AdminDashboard = () => {
                 <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #F59E0B' }}>
                   <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>Mechanic Apps</div>
                   <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#F59E0B' }}>{counts.mechanic}</div>
-                </div>
-                <div className="sc-card" style={{ padding: '24px', borderLeft: '4px solid #8B5CF6' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', marginBottom: '8px' }}>DOJ Apps</div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#8B5CF6' }}>{counts.doj}</div>
                 </div>
               </>
             )}
@@ -954,7 +954,6 @@ const AdminDashboard = () => {
                   <option value="police">Police Dept</option>
                   <option value="ems">EMS</option>
                   <option value="mechanic">Mechanic</option>
-                  <option value="doj">DOJ</option>
                 </select>
               ) : (
                 <span style={{
@@ -979,8 +978,7 @@ const AdminDashboard = () => {
               {[
                 { id: 'police', label: 'Police', locked: appSettings.policeLocked, color: '#3B82F6' },
                 { id: 'ems', label: 'EMS', locked: appSettings.emsLocked, color: '#EF4444' },
-                { id: 'mechanic', label: 'Mechanic', locked: appSettings.mechanicLocked, color: '#F59E0B' },
-                { id: 'doj', label: 'DOJ', locked: appSettings.dojLocked, color: '#8B5CF6' }
+                { id: 'mechanic', label: 'Mechanic', locked: appSettings.mechanicLocked, color: '#F59E0B' }
               ].map(dept => (
                 <div key={dept.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.4)', padding: '10px 16px', borderRadius: '10px', border: `1px solid ${dept.color}30` }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>

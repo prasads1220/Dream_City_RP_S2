@@ -223,7 +223,8 @@ export const subscribeToAppSettings = (callback) => {
       callback({
         policeLocked: true,
         emsLocked: true,
-        mechanicLocked: true
+        mechanicLocked: true,
+        dojLocked: true
       });
     }
   }, (error) => {
