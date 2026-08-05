@@ -166,11 +166,14 @@ app.post('/api/notify-user', async (req, res) => {
     channelResult = { success: true }; // Treat as success since we intentionally skipped
   }
   
-  if (result.success) {
-    res.json({ success: true, message: 'Notification sent and role assigned', channelNotification: channelResult.success });
-  } else {
-    res.status(500).json({ success: false, message: result.error });
-  }
+  // Always return 200 success to frontend so it doesn't show "discord failed" 
+  // just because the user has their DMs closed (very common).
+  res.json({ 
+    success: true, 
+    dmSuccess: result.success,
+    channelSuccess: channelResult.success,
+    message: 'Discord processing completed.' 
+  });
 });
 
 /**
