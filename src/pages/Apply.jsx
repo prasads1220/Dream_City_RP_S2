@@ -43,6 +43,13 @@ const DEPT_QUESTIONS = {
     { id: 'mech3', label: 'A customer comes in angry and demands instant service. What do you do?' },
     { id: 'mech4', label: 'Two vehicles arrive at once: one flat tire, one engine smoking. Which do you help first?' },
     { id: 'mech5', label: 'A police vehicle needs emergency repairs during an active scene. What do you do?' }
+  ],
+  doj: [
+    { id: 'doj1', label: 'Why do you want to join the Department of Justice?' },
+    { id: 'doj2', label: 'What responsibilities do you believe a DOJ member has within the city?' },
+    { id: 'doj3', label: 'What qualities make you a suitable candidate for the Department of Justice?' },
+    { id: 'doj4', label: 'How would you ensure fair roleplay while performing DOJ duties?' },
+    { id: 'doj5', label: 'Are you willing to attend DOJ meetings, training sessions, and court proceedings when required?' }
   ]
 };
 
@@ -59,7 +66,8 @@ const Apply = () => {
   const [appSettings, setAppSettings] = useState({
     policeLocked: true,
     emsLocked: true,
-    mechanicLocked: true
+    mechanicLocked: true,
+    dojLocked: true
   });
 
   const [userApplications, setUserApplications] = useState([]);
@@ -174,6 +182,15 @@ const Apply = () => {
       badgeType: 'membership',
       locked: appSettings.mechanicLocked
     },
+    { 
+      id: 'doj', 
+      label: 'DOJ Application', 
+      desc: 'Join the Department of Justice and uphold the law.',
+      icon: '⚖️', 
+      badge: 'ALLOWLIST ONLY', 
+      badgeType: 'membership',
+      locked: appSettings.dojLocked
+    },
   ];
 
   const handleDiscordLogin = async () => {
@@ -243,13 +260,14 @@ const Apply = () => {
       const isDuplicate = apps.some(app => app.type === appType && app.status !== 'rejected');
       
       const userRole = userData?.role?.toLowerCase() || '';
-      const isMember = ['civilian', 'police', 'pd', 'ems', 'mechanic'].includes(userRole);
+      const isMember = ['civilian', 'police', 'pd', 'ems', 'mechanic', 'doj'].includes(userRole);
       let isRoleDuplicate = false;
 
       if (appType === 'civilian' && isMember) isRoleDuplicate = true;
       if (appType === 'police' && (userRole === 'police' || userRole === 'pd')) isRoleDuplicate = true;
       if (appType === 'ems' && userRole === 'ems') isRoleDuplicate = true;
       if (appType === 'mechanic' && userRole === 'mechanic') isRoleDuplicate = true;
+      if (appType === 'doj' && userRole === 'doj') isRoleDuplicate = true;
       
       if (isDuplicate || isRoleDuplicate) {
         throw new Error(`You have already submitted a ${appType} application or already have this role.`);
@@ -326,7 +344,7 @@ const Apply = () => {
                 
                 // Role-based status for existing members
                 const userRole = userData?.role?.toLowerCase() || '';
-                const isMember = ['civilian', 'police', 'pd', 'ems', 'mechanic'].includes(userRole);
+                const isMember = ['civilian', 'police', 'pd', 'ems', 'mechanic', 'doj'].includes(userRole);
                 if (!existingApp) {
                   // If user is already a member of any dept, they are approved for Civilian
                   if (dept.id === 'civilian' && isMember) {
@@ -335,7 +353,8 @@ const Apply = () => {
                   // Check for specific department roles
                   if ((dept.id === 'police' && (userRole === 'police' || userRole === 'pd')) ||
                       (dept.id === 'ems' && userRole === 'ems') ||
-                      (dept.id === 'mechanic' && userRole === 'mechanic')) {
+                      (dept.id === 'mechanic' && userRole === 'mechanic') ||
+                      (dept.id === 'doj' && userRole === 'doj')) {
                     existingApp = { status: 'approved' };
                   }
                 }

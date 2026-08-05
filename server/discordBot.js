@@ -54,6 +54,15 @@ const DEPARTMENT_ROLES = {
       'Jr Mechanic': '1493620547525808198',
       'Recruit': '1493620548834689075'
     }
+  },
+  doj: {
+    ranks: {
+      'Chief Justice': '1529050716780367964',
+      'Attorney General': '1530221577218687197',
+      'District Attorney': '1534157824467144776',
+      'Public Defender': '1534157856360763503',
+      'Legal Intern': '1534157877000933426'
+    }
   }
 };
 
@@ -177,6 +186,12 @@ function createStatusEmbed(type = '', status, name, discordId, metadata = {}) {
     } else if (!isScheduled) {
       gifUrl = 'https://raw.githubusercontent.com/prasads6507/Dream_City_RP_S2/main/server/assets/ems_rejected.png';
     }
+  } else if (lowType === 'doj') {
+    if (isApproved) {
+      gifUrl = APPROVED_GIF;
+    } else if (!isScheduled) {
+      gifUrl = REJECTED_GIF;
+    }
   }
   
   const statusEmoji = isApproved ? '✅' : isScheduled ? '🗓️' : '❌';
@@ -262,7 +277,8 @@ const DEPARTMENT_CHANNELS = {
   civilian: '1497311768832249886',
   police: '1493620877231915150',
   ems: '1493620878938734662',
-  mechanic: '1493620879798567035'
+  mechanic: '1493620879798567035',
+  doj: '1534530812731592840'
 };
 
 /**
@@ -315,9 +331,11 @@ async function sendNewApplicationNotification(name, discordId, type) {
   try {
     let channelId = '1498015267987521616'; // Default admin log channel
     
-    // Route EMS applications to specific channel if provided
+    // Route applications to specific channel if provided
     if (type && type.toLowerCase() === 'ems') {
       channelId = '1500509643796119673';
+    } else if (type && type.toLowerCase() === 'doj') {
+      channelId = '1534530579209654423';
     }
 
     const channel = await client.channels.fetch(channelId);
