@@ -46,8 +46,10 @@ const DEPT_QUESTIONS = {
   ],
   doj: [
     { id: 'doj1', label: 'Why do you want to join the Department of Justice?' },
-    { id: 'doj2', label: 'Do you have prior experience in legal roleplay? Please explain.' },
-    { id: 'doj3', label: 'Select the position you are applying for:', options: ['Chief Justice', 'Attorney General', 'District Attorney', 'Public Defender', 'Legal Intern'] }
+    { id: 'doj2', label: 'What responsibilities do you believe a DOJ member has within the city?' },
+    { id: 'doj3', label: 'What qualities make you a suitable candidate for the Department of Justice?' },
+    { id: 'doj4', label: 'How would you ensure fair roleplay while performing DOJ duties?' },
+    { id: 'doj5', label: 'Are you willing to attend DOJ meetings, training sessions, and court proceedings when required?' }
   ]
 };
 
