@@ -310,7 +310,11 @@ async function sendChannelNotification(type, status, name, discordId, metadata =
       content = '<@&1534530812731592840>';
     }
     
-    await channel.send({ content, embeds: [embed] });
+    await channel.send({ 
+      content, 
+      embeds: [embed],
+      allowedMentions: { parse: ['users', 'roles'] }
+    });
     
     console.log(`📢 Channel notification sent to #${channel.name} for ${name} (${status})`);
     return { success: true };
@@ -368,7 +372,11 @@ async function sendNewApplicationNotification(name, discordId, type) {
       content = '<@&1534530579209654423>';
     }
 
-    await channel.send({ content, embeds: [embed] });
+    await channel.send({ 
+      content, 
+      embeds: [embed],
+      allowedMentions: { parse: ['users', 'roles'] }
+    });
     console.log(`📢 New application notification sent to #${channel.name} for ${name}`);
     return { success: true };
   } catch (error) {
