@@ -107,7 +107,8 @@ async function assignGuildRole(userId, roleIds) {
  * @param {string} type - 'police', 'ems', or 'mechanic'
  */
 async function removeDepartmentRoles(userInfo, type) {
-  if (!userInfo || !type || !DEPARTMENT_ROLES[type]) return { success: false, error: 'Invalid parameters' };
+  const typeKey = (type || '').toLowerCase();
+  if (!userInfo || !typeKey || !DEPARTMENT_ROLES[typeKey]) return { success: false, error: 'Invalid parameters' };
   
   try {
     const guild = GUILD_ID 
@@ -132,7 +133,7 @@ async function removeDepartmentRoles(userInfo, type) {
     if (!member) return { success: false, error: 'Member not found' };
 
     // Identify all roles that belong to this department
-    const deptConfig = DEPARTMENT_ROLES[type];
+    const deptConfig = DEPARTMENT_ROLES[typeKey];
     let rolesToRemove = [];
     
     if (typeof deptConfig === 'string') {
@@ -163,12 +164,13 @@ const SCHEDULED_GIF = 'https://gifdb.com/images/high/calendar-appointment-schedu
 function createStatusEmbed(type = '', status, name, discordId, metadata = {}) {
   const isApproved = status === 'approved';
   const isScheduled = status === 'scheduled';
+  const isReceived = status === 'received';
   const lowType = (type || '').toLowerCase();
   const isCivilian = lowType === 'civilian' || lowType === 'whitelist';
   
   const typeLabel = isCivilian ? 'Whitelist' : type.charAt(0).toUpperCase() + type.slice(1);
   
-  let gifUrl = isApproved ? APPROVED_GIF : isScheduled ? SCHEDULED_GIF : REJECTED_GIF;
+  let gifUrl = isApproved ? APPROVED_GIF : isScheduled ? SCHEDULED_GIF : isReceived ? SCHEDULED_GIF : REJECTED_GIF;
   if (lowType === 'police') {
     if (isApproved) {
       gifUrl = 'https://raw.githubusercontent.com/prasads6507/Dream_City_RP_S2/main/server/assets/police_approved.png';
@@ -195,9 +197,9 @@ function createStatusEmbed(type = '', status, name, discordId, metadata = {}) {
     }
   }
   
-  const statusEmoji = isApproved ? '✅' : isScheduled ? '🗓️' : '❌';
-  const statusText = isApproved ? 'APPROVED' : isScheduled ? 'SCHEDULED' : 'REJECTED';
-  const color = isApproved ? 0x22c55e : isScheduled ? 0x06b6d4 : 0xef4444;
+  const statusEmoji = isApproved ? '✅' : isScheduled ? '🗓️' : isReceived ? '📬' : '❌';
+  const statusText = isApproved ? 'APPROVED' : isScheduled ? 'SCHEDULED' : isReceived ? 'RECEIVED' : 'REJECTED';
+  const color = isApproved ? 0x22c55e : isScheduled ? 0x06b6d4 : isReceived ? 0x6c3ce1 : 0xef4444;
 
   let description = `**${name}**, your **${typeLabel}** application for **Dream City RP** has been **${statusText}**.`;
 
@@ -210,6 +212,8 @@ function createStatusEmbed(type = '', status, name, discordId, metadata = {}) {
     } else {
       description = `**${name}**, your **${typeLabel}** application has reached the next stage! We have **SCHEDULED AN INTERVIEW** for you.\n\n📅 **Date**: ${metadata.interviewDate}\n⏰ **Time**: ${metadata.interviewTime || 'TBD'}\n\nPlease be present in the waiting room at the scheduled time.`;
     }
+  } else if (isReceived) {
+    description = `**${name}**, your **${typeLabel}** application has been successfully **RECEIVED** and is currently under review by our team. We will update you soon!`;
   } else {
     description = `**${name}**, we regret to inform you that your **${typeLabel}** application has been **REJECTED**. You may reapply in the future.`;
   }
@@ -233,7 +237,7 @@ function createStatusEmbed(type = '', status, name, discordId, metadata = {}) {
   }
 
   return {
-    title: `${statusEmoji} ${isCivilian ? 'Whitelist Interview' : `${typeLabel} Application`} ${statusText}`,
+    title: `${statusEmoji} ${isCivilian ? 'Whitelist Interview' : `${typeLabel} Application`} ${isReceived ? 'RECEIVED' : statusText}`,
     description: description,
     color: color,
     fields: fields,
@@ -292,7 +296,8 @@ const DEPARTMENT_CHANNELS = {
  */
 async function sendChannelNotification(type, status, name, discordId, metadata = {}) {
   try {
-    const channelId = DEPARTMENT_CHANNELS[type];
+    const typeKey = (type || '').toLowerCase();
+    const channelId = DEPARTMENT_CHANNELS[typeKey];
     if (!channelId) {
       console.log(`ℹ️ No channel configured for type: ${type}, skipping channel notification.`);
       return { success: false, error: 'No channel for this department' };

@@ -141,9 +141,11 @@ app.post('/api/notify-user', async (req, res) => {
   const metadata = { jobRank, interviewDate, interviewTime, adminMessage };
   const result = await sendStatusDM(discordId, status, name, type, metadata);
   
+  const typeKey = (type || '').toLowerCase();
+  
   // Assign Discord roles if approved
-  if (status === 'approved' && DEPARTMENT_ROLES[type]) {
-    const config = DEPARTMENT_ROLES[type];
+  if (status === 'approved' && DEPARTMENT_ROLES[typeKey]) {
+    const config = DEPARTMENT_ROLES[typeKey];
     let rolesToAssign = [];
     
     if (typeof config === 'string') {
@@ -194,6 +196,9 @@ app.post('/api/notify-new-application', async (req, res) => {
   }
 
   const result = await sendNewApplicationNotification(name, discordId, type);
+  // Send a DM to acknowledge receipt
+  await sendStatusDM(discordId, 'received', name, type);
+
   if (result.success) {
     res.json({ success: true, message: 'Notification sent' });
   } else {
