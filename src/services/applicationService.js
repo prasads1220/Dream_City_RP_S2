@@ -100,7 +100,7 @@ export const submitApplication = async (data, type, userId) => {
       name: data.discordName || data.fullName || 'Unknown',
       discordId: data.discordId,
       type: type
-    });
+    }, { timeout: 10000 });
   } catch (error) {
     console.error('Failed to notify Discord about new application:', error);
   }
@@ -156,7 +156,7 @@ export const processApplicationDecision = async (appId, status, appData, metadat
       name: appData.discordName || appData.fullName,
       type: appData.type,
       ...metadata
-    });
+    }, { timeout: 10000 });
     result.discord = notifyRes.data.success;
   } catch (error) {
     console.error('Failed to send Discord notification:', error.message);
@@ -169,7 +169,7 @@ export const processApplicationDecision = async (appId, status, appData, metadat
       const whitelistRes = await axios.post(`${BACKEND_URL}/api/whitelist-player`, {
         discordId: appData.discordId,
         name: appData.fullName || appData.discordName
-      });
+      }, { timeout: 10000 });
       result.whitelist = whitelistRes.data.success;
     } catch (error) {
       console.error('Failed to update FiveM whitelist:', error.message);

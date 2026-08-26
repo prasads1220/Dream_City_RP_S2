@@ -345,16 +345,8 @@ const Apply = () => {
                 const userRole = userData?.role?.toLowerCase() || '';
                 const isMember = ['civilian', 'police', 'pd', 'ems', 'mechanic'].includes(userRole);
                 if (!existingApp) {
-                  // If user is already a member of any dept, they are approved for Civilian
-                  if (dept.id === 'civilian' && isMember) {
-                    existingApp = { status: 'approved' };
-                  }
-                  // Check for specific department roles
-                  if ((dept.id === 'police' && (userRole === 'police' || userRole === 'pd')) ||
-                      (dept.id === 'ems' && userRole === 'ems') ||
-                      (dept.id === 'mechanic' && userRole === 'mechanic')) {
-                    existingApp = { status: 'approved' };
-                  }
+                  // Bypass removed: Do not fake an approved application just because the user has a role in Firestore, 
+                  // as it causes confusion when actual applications are pending or when they are just testing the form.
                 }
                 
                 return (
