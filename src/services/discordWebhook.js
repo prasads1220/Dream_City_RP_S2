@@ -1,8 +1,8 @@
 // Discord Webhook Integration
 // Sends a notification to a Discord channel when a new whitelist application is submitted
-// Replace the WEBHOOK_URL with your actual Discord webhook URL
+// Replace the WEBHOOK_URL with your actual Discord webhook URL or add VITE_DISCORD_WEBHOOK_URL to .env.local
 
-const WEBHOOK_URL = 'YOUR_DISCORD_WEBHOOK_URL';
+const WEBHOOK_URL = import.meta.env.VITE_DISCORD_WEBHOOK_URL || 'YOUR_DISCORD_WEBHOOK_URL';
 
 /**
  * Send a notification to Discord about a new whitelist application
