@@ -102,6 +102,17 @@ const AdminDashboard = () => {
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '', name: '', discordUsername: '', role: 'admin' });
   
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+  });
+
+  const confirmAction = (title, message, onConfirm) => {
+    setConfirmConfig({ isOpen: true, title, message, onConfirm });
+  };
+
   // Event Management States
   const [eventsList, setEventsList] = useState([]);
   const [eventApplications, setEventApplications] = useState([]);
@@ -241,32 +252,34 @@ const AdminDashboard = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleDeleteEventApp = async (appId) => {
-    if (!window.confirm('Are you sure you want to remove this application?')) return;
-    setActionLoading(appId);
-    try {
-      await deleteEventApplication(appId);
-      setEventApplications(prev => prev.filter(app => app.id !== appId));
-      setToast({ type: 'success', message: 'Application removed successfully.' });
-    } catch (err) {
-      setToast({ type: 'error', message: 'Failed to remove application.' });
-    }
-    setActionLoading(null);
-    setTimeout(() => setToast(null), 3000);
+  const handleDeleteEventApp = (appId) => {
+    confirmAction('Remove Application', 'Are you sure you want to remove this application?', async () => {
+      setActionLoading(appId);
+      try {
+        await deleteEventApplication(appId);
+        setEventApplications(prev => prev.filter(app => app.id !== appId));
+        setToast({ type: 'success', message: 'Application removed successfully.' });
+      } catch (err) {
+        setToast({ type: 'error', message: 'Failed to remove application.' });
+      }
+      setActionLoading(null);
+      setTimeout(() => setToast(null), 3000);
+    });
   };
 
-  const handleDeleteEvent = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) return;
-    setActionLoading(id);
-    try {
-      await deleteEvent(id);
-      setEventsList(prev => prev.filter(e => e.id !== id));
-      setToast({ type: 'success', message: 'Event deleted successfully.' });
-    } catch (err) {
-      setToast({ type: 'error', message: 'Failed to delete event.' });
-    }
-    setActionLoading(null);
-    setTimeout(() => setToast(null), 3000);
+  const handleDeleteEvent = (id) => {
+    confirmAction('Delete Event', 'Are you sure you want to delete this event? This action cannot be undone.', async () => {
+      setActionLoading(id);
+      try {
+        await deleteEvent(id);
+        setEventsList(prev => prev.filter(e => e.id !== id));
+        setToast({ type: 'success', message: 'Event deleted successfully.' });
+      } catch (err) {
+        setToast({ type: 'error', message: 'Failed to delete event.' });
+      }
+      setActionLoading(null);
+      setTimeout(() => setToast(null), 3000);
+    });
   };
 
   const handleToggleEventActive = async (id) => {
@@ -455,66 +468,68 @@ const AdminDashboard = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this application? This action cannot be undone.')) return;
-    setActionLoading(id);
-    try {
-      // Surgical Role Removal on Deletion
-      const app = applications.find(a => a.id === id);
-      if (app && app.status === 'approved' && app.discordId && ['police', 'ems', 'mechanic'].includes(app.type)) {
-        try {
-          let baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000';
-          baseUrl = baseUrl.replace(/\/$/, '');
-          await axios.post(`${baseUrl}/api/revoke-role`, { discordId: app.discordId, type: app.type });
-          console.log(`✅ ${app.type} roles surgically revoked for`, app.discordId);
-        } catch (revokeErr) {
-          console.warn('⚠️ Failed to revoke Discord roles:', revokeErr.message);
-        }
-      }
-      await deleteApplications([id]);
-      setApplications(prev => prev.filter(a => a.id !== id));
-      setSelectedIds(prev => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      setToast({ type: 'success', message: 'Application deleted.' });
-      setTimeout(() => setToast(null), 3000);
-    } catch (err) {
-      setToast({ type: 'error', message: 'Delete failed.' });
-      setTimeout(() => setToast(null), 3000);
-    }
-    setActionLoading(null);
-  };
-
-  const handleBulkDelete = async () => {
-    const ids = Array.from(selectedIds);
-    if (!window.confirm(`Are you sure you want to delete ${ids.length} applications? This action cannot be undone.`)) return;
-    setLoading(true);
-    try {
-      // Surgical Role Removal on Bulk Deletion
-      let baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000';
-      baseUrl = baseUrl.replace(/\/$/, '');
-      for (const id of ids) {
+  const handleDelete = (id) => {
+    confirmAction('Delete Application', 'Are you sure you want to delete this application? This action cannot be undone.', async () => {
+      setActionLoading(id);
+      try {
+        // Surgical Role Removal on Deletion
         const app = applications.find(a => a.id === id);
         if (app && app.status === 'approved' && app.discordId && ['police', 'ems', 'mechanic'].includes(app.type)) {
           try {
+            let baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000';
+            baseUrl = baseUrl.replace(/\/$/, '');
             await axios.post(`${baseUrl}/api/revoke-role`, { discordId: app.discordId, type: app.type });
+            console.log(`✅ ${app.type} roles surgically revoked for`, app.discordId);
           } catch (revokeErr) {
-            console.warn(`⚠️ Failed to revoke ${app.type} roles for ${app.discordId}:`, revokeErr.message);
+            console.warn('⚠️ Failed to revoke Discord roles:', revokeErr.message);
           }
         }
+        await deleteApplications([id]);
+        setApplications(prev => prev.filter(a => a.id !== id));
+        setSelectedIds(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        setToast({ type: 'success', message: 'Application deleted.' });
+        setTimeout(() => setToast(null), 3000);
+      } catch (err) {
+        setToast({ type: 'error', message: 'Delete failed.' });
+        setTimeout(() => setToast(null), 3000);
       }
-      await deleteApplications(ids);
-      setApplications(prev => prev.filter(a => !selectedIds.has(a.id)));
-      setSelectedIds(new Set());
-      setToast({ type: 'success', message: `${ids.length} applications deleted.` });
-      setTimeout(() => setToast(null), 3000);
-    } catch (err) {
-      setToast({ type: 'error', message: 'Bulk delete failed.' });
-      setTimeout(() => setToast(null), 3000);
-    }
-    setLoading(false);
+      setActionLoading(null);
+    });
+  };
+
+  const handleBulkDelete = () => {
+    const ids = Array.from(selectedIds);
+    confirmAction('Bulk Delete', `Are you sure you want to delete ${ids.length} applications? This action cannot be undone.`, async () => {
+      setLoading(true);
+      try {
+        // Surgical Role Removal on Bulk Deletion
+        let baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000';
+        baseUrl = baseUrl.replace(/\/$/, '');
+        for (const id of ids) {
+          const app = applications.find(a => a.id === id);
+          if (app && app.status === 'approved' && app.discordId && ['police', 'ems', 'mechanic'].includes(app.type)) {
+            try {
+              await axios.post(`${baseUrl}/api/revoke-role`, { discordId: app.discordId, type: app.type });
+            } catch (revokeErr) {
+              console.warn(`⚠️ Failed to revoke ${app.type} roles for ${app.discordId}:`, revokeErr.message);
+            }
+          }
+        }
+        await deleteApplications(ids);
+        setApplications(prev => prev.filter(a => !selectedIds.has(a.id)));
+        setSelectedIds(new Set());
+        setToast({ type: 'success', message: `${ids.length} applications deleted.` });
+        setTimeout(() => setToast(null), 3000);
+      } catch (err) {
+        setToast({ type: 'error', message: 'Bulk delete failed.' });
+        setTimeout(() => setToast(null), 3000);
+      }
+      setLoading(false);
+    });
   };
 
   const toggleSelect = (id) => {
@@ -564,18 +579,18 @@ const AdminDashboard = () => {
 
   const handleDeleteStaff = async (uid) => {
     const { deleteAdminAccount } = await import('../services/authService');
-    if (!window.confirm('PERMANENT ACTION: This will delete the account from Login AND Database. They will NOT be able to login again. Proceed?')) return;
-    
-    setActionLoading(uid);
-    try {
-      await deleteAdminAccount(uid);
-      setUsers(prev => prev.filter(u => u.id !== uid));
-      setToast({ type: 'success', message: 'Staff member permanently deleted.' });
-    } catch (err) {
-      setToast({ type: 'error', message: err.message });
-    }
-    setActionLoading(null);
-    setTimeout(() => setToast(null), 3000);
+    confirmAction('Delete Staff Member', 'PERMANENT ACTION: This will delete the account from Login AND Database. They will NOT be able to login again. Proceed?', async () => {
+      setActionLoading(uid);
+      try {
+        await deleteAdminAccount(uid);
+        setUsers(prev => prev.filter(u => u.id !== uid));
+        setToast({ type: 'success', message: 'Staff member permanently deleted.' });
+      } catch (err) {
+        setToast({ type: 'error', message: err.message });
+      }
+      setActionLoading(null);
+      setTimeout(() => setToast(null), 3000);
+    });
   };
 
   const handlePlayerAction = async (action, target, reason = '', targetName = '') => {
@@ -613,21 +628,21 @@ const AdminDashboard = () => {
   const handleBulkDeleteStaff = async () => {
     const { deleteAdminAccount } = await import('../services/authService');
     const ids = Array.from(selectedStaffIds);
-    if (!window.confirm(`PERMANENT ACTION: This will delete ${ids.length} staff accounts. They will NOT be able to login again. Proceed?`)) return;
-    
-    setLoading(true);
-    try {
-      for (const uid of ids) {
-        await deleteAdminAccount(uid);
+    confirmAction('Bulk Delete Staff', `PERMANENT ACTION: This will delete ${ids.length} staff accounts. They will NOT be able to login again. Proceed?`, async () => {
+      setLoading(true);
+      try {
+        for (const uid of ids) {
+          await deleteAdminAccount(uid);
+        }
+        setUsers(prev => prev.filter(u => !selectedStaffIds.has(u.id)));
+        setSelectedStaffIds(new Set());
+        setToast({ type: 'success', message: `${ids.length} staff members removed.` });
+      } catch (err) {
+        setToast({ type: 'error', message: 'Bulk delete partially failed.' });
       }
-      setUsers(prev => prev.filter(u => !selectedStaffIds.has(u.id)));
-      setSelectedStaffIds(new Set());
-      setToast({ type: 'success', message: `${ids.length} staff members removed.` });
-    } catch (err) {
-      setToast({ type: 'error', message: 'Bulk delete partially failed.' });
-    }
-    setLoading(false);
-    setTimeout(() => setToast(null), 3000);
+      setLoading(false);
+      setTimeout(() => setToast(null), 3000);
+    });
   };
 
   const toggleSelectStaff = (id) => {
@@ -726,6 +741,39 @@ const AdminDashboard = () => {
 
   return (
     <div style={{ minHeight: '100vh', paddingTop: '120px', paddingBottom: '80px' }}>
+      {confirmConfig.isOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(5px)', animation: 'fade-in 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.95)', padding: '32px', borderRadius: '24px', maxWidth: '420px', width: '90%',
+            border: '1px solid rgba(167,139,250,0.3)', boxShadow: '0 25px 60px rgba(0,0,0,0.9)', textAlign: 'center'
+          }}>
+            <h3 style={{ color: '#fff', fontSize: '1.4rem', marginBottom: '16px', fontWeight: 800 }}>{confirmConfig.title}</h3>
+            <p style={{ color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: '32px' }}>{confirmConfig.message}</p>
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+              <button 
+                onClick={() => setConfirmConfig({ ...confirmConfig, isOpen: false })} 
+                style={{ padding: '12px 24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '12px', cursor: 'pointer', fontWeight: 700, transition: 'all 0.2s' }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => { confirmConfig.onConfirm(); setConfirmConfig({ ...confirmConfig, isOpen: false }); }} 
+                className="sc-btn" 
+                style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: 700, boxShadow: '0 0 20px rgba(239, 68, 68, 0.4)' }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div style={{
           position: 'fixed', top: '100px', right: '24px', padding: '14px 24px',
@@ -1418,9 +1466,9 @@ const AdminDashboard = () => {
                       </button>
                       <button 
                         onClick={() => {
-                          if (window.confirm(`Are you sure you want to KILL player ${player.name}?`)) {
+                          confirmAction('Kill Player', `Are you sure you want to KILL player ${player.name}?`, () => {
                             handlePlayerAction('command', player.id, { command: `kill ${player.id}` }, player.name);
-                          }
+                          });
                         }}
                         disabled={actionLoading === `player-${player.id}-command`}
                         className="sc-btn-outline" 
