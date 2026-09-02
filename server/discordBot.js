@@ -87,7 +87,19 @@ async function assignGuildRole(userId, roleIds) {
 
     if (!guild) return { success: false, error: 'Guild not found' };
 
-    const member = await guild.members.fetch(userId);
+    let member = null;
+    if (/^\d+$/.test(userId)) {
+      member = await guild.members.fetch(userId).catch(() => null);
+    }
+    
+    if (!member) {
+      const members = await guild.members.fetch();
+      member = members.find(m => 
+        m.user.username.toLowerCase() === userId.toLowerCase() || 
+        m.user.tag.toLowerCase() === userId.toLowerCase()
+      );
+    }
+
     if (!member) return { success: false, error: 'Member not found in server' };
 
     const idsToAdd = Array.isArray(roleIds) ? roleIds : [roleIds];
@@ -257,10 +269,25 @@ function createStatusEmbed(type = '', status, name, discordId, metadata = {}) {
  */
 async function sendStatusDM(discordId, status, name, type = 'Whitelist', metadata = {}) {
   try {
-    const user = await client.users.fetch(discordId);
+    let user = null;
+    if (/^\d+$/.test(discordId)) {
+      user = await client.users.fetch(discordId).catch(() => null);
+    }
     
     if (!user) {
-      console.warn(`⚠️ User not found for ID: ${discordId}`);
+      const guild = GUILD_ID ? await client.guilds.fetch(GUILD_ID).catch(() => null) : client.guilds.cache.first();
+      if (guild) {
+        const members = await guild.members.fetch();
+        const member = members.find(m => 
+          m.user.username.toLowerCase() === discordId.toLowerCase() || 
+          m.user.tag.toLowerCase() === discordId.toLowerCase()
+        );
+        if (member) user = member.user;
+      }
+    }
+    
+    if (!user) {
+      console.warn(`⚠️ User not found for ID/Username: ${discordId}`);
       return { success: false, error: 'User not found' };
     }
 

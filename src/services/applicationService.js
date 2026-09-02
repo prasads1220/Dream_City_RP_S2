@@ -141,13 +141,7 @@ export const processApplicationDecision = async (appId, status, appData, metadat
   const result = { firestore: true, discord: false, whitelist: false, error: null };
 
   // 2. Trigger Backend Discord Notification
-  const isNumeric = /^\d+$/.test(appData.discordId);
-  
-  if (!isNumeric) {
-    console.error('🛑 Automation Aborted: Invalid Discord ID format (Non-numeric).');
-    result.error = 'Invalid Discord ID format';
-    return result;
-  }
+  // The backend has been updated to handle non-numeric Discord IDs (usernames)
 
   try {
     const notifyRes = await axios.post(`${BACKEND_URL}/api/notify-user`, {
