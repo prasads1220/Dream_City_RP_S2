@@ -150,8 +150,10 @@ export const processApplicationDecision = async (appId, status, appData, metadat
       name: appData.discordName || appData.fullName,
       type: appData.type,
       ...metadata
-    }, { timeout: 10000 });
+    }, { timeout: 35000 }); // 35s timeout — Render.com free tier can take 30s to wake up
     result.discord = notifyRes.data.success;
+    result.roleSuccess = notifyRes.data.roleSuccess;
+    result.roleError = notifyRes.data.roleError;
   } catch (error) {
     console.error('Failed to send Discord notification:', error.message);
     result.error = error.message;

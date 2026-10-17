@@ -142,6 +142,8 @@ app.post('/api/notify-user', async (req, res) => {
   const result = await sendStatusDM(discordId, status, name, type, metadata);
   
   const typeKey = (type || '').toLowerCase();
+  let roleSuccess = false;
+  let roleError = null;
   
   // Assign Discord roles if approved
   if (status === 'approved' && DEPARTMENT_ROLES[typeKey]) {
@@ -162,12 +164,19 @@ app.post('/api/notify-user', async (req, res) => {
     
     if (rolesToAssign.length > 0) {
       const roleResult = await assignGuildRole(discordId, rolesToAssign);
+      roleSuccess = roleResult.success;
+      roleError = roleResult.error || null;
       console.log(`🏷️ Role assignment result:`, roleResult);
     } else {
-      console.warn(`⚠️ No valid roles to assign for type='${typeKey}', jobRank='${jobRank}'. Check DEPARTMENT_ROLES config.`);
+      roleError = `No valid role IDs found for type='${typeKey}', jobRank='${jobRank}'`;
+      console.warn(`⚠️ ${roleError}`);
     }
   } else if (status === 'approved') {
-    console.warn(`⚠️ No DEPARTMENT_ROLES config found for type='${typeKey}'. Role not assigned.`);
+    roleError = `No DEPARTMENT_ROLES config for type='${typeKey}'`;
+    console.warn(`⚠️ ${roleError}`);
+  } else {
+    // Not an approval — role assignment skipped intentionally
+    roleSuccess = true;
   }
 
   // Send notification to the department-specific Discord channel (ONLY for approved & rejected)
@@ -177,16 +186,18 @@ app.post('/api/notify-user', async (req, res) => {
     console.log(`📢 Channel notification result:`, channelResult);
   } else {
     console.log(`ℹ️ Status is ${status}, skipping channel notification (DM only)`);
-    channelResult = { success: true }; // Treat as success since we intentionally skipped
+    channelResult = { success: true };
   }
   
-  // Always return 200 success to frontend so it doesn't show "discord failed" 
-  // just because the user has their DMs closed (very common).
   res.json({ 
     success: true, 
     dmSuccess: result.success,
+    roleSuccess,
+    roleError,
     channelSuccess: channelResult.success,
-    message: 'Discord processing completed.' 
+    message: roleSuccess 
+      ? 'Discord role assigned successfully.' 
+      : `Role assignment failed: ${roleError || 'Unknown error. Check bot permissions and role hierarchy.'}`,
   });
 });
 

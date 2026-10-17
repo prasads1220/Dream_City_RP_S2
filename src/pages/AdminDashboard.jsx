@@ -457,9 +457,11 @@ const AdminDashboard = () => {
       setApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'approved', jobRank: rank } : a));
       
       if (!result.discord) {
-        setToast({ type: 'warning', message: `Approved${rank ? ` as ${rank}` : ''}, but Discord failed.` });
+        setToast({ type: 'warning', message: `Approved${rank ? ` as ${rank}` : ''}, but backend unreachable: ${result.error || 'Timeout — Render may be waking up, role will NOT be assigned'}` });
+      } else if (!result.roleSuccess) {
+        setToast({ type: 'warning', message: `Approved${rank ? ` as ${rank}` : ''}, but role NOT assigned: ${result.roleError || 'Check bot permissions & role hierarchy in Discord'}` });
       } else {
-        setToast({ type: 'success', message: `Approved${rank ? ` as ${rank}` : ''} and Discord role assigned!` });
+        setToast({ type: 'success', message: `✅ Approved${rank ? ` as ${rank}` : ''} — Discord role assigned!` });
       }
     } catch (err) {
       setToast({ type: 'error', message: 'Approval failed.' });
