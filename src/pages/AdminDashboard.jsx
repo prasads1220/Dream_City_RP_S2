@@ -62,21 +62,21 @@ const DEPT_QUESTIONS = {
 
 const DEPT_RANKS = {
   police: [
-    'CHIEF', 'ASSISTANT CHIEF', 'COMMANDER', 'CAPTAIN', 'LIEUTENANT', 
+    'LSPD CHIEF', 'LSPD DEPUTY CHIEF', 'COMMANDER', 'CAPTAIN', 'LIEUTENANT', 
     'HEAD SERGEANT', 'SERGEANT', 'CORPORAL', 'LANCE CORPORAL', 
     'SENIOR LEAD OFFICER', 'SENIOR OFFICER', 'OFFICER', 
     'PROBATIONARY OFFICER', 'SOLO CADET', 'CADET'
   ],
   ems: [
-    'EMS Chief', 'EMS Co-Chief', 'EMS', 'Surgeon', 'Paramedic', 
+    'EMS Chief', 'EMS Deputy Chief', 'EMS', 'Surgeon', 'Paramedic', 
     'Intern Doctor', 'Trainee'
   ],
   mechanic: [
-    'Mechanic Chief', 'Garage Manager', 'Asst Manager', 
+    'Mechanic Manager', 'Garage Manager', 'Asst Manager', 
     'Sr Mechanic', 'Jr Mechanic', 'Recruit'
   ],
   doj: [
-    'Chief Justice', 'Attorney General', 'District Attorney', 'Public Defender', 'Legal Intern'
+    'Chief Justice', 'Attorney General', 'Deputy Attorney General', 'District Attorney', 'Attorney', 'Legal Intern'
   ]
 };
 

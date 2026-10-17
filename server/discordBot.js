@@ -14,7 +14,7 @@ const DEPARTMENT_ROLES = {
   civilian: '1493620549883003031',
   whitelist: '1493620549883003031',
   police: {
-    base: '1493620510465200230',
+    base: '1493620510465200230', // Law Enforcement
     ranks: {
       'CADET': '1493620525283676190',
       'SOLO CADET': '1493620524402872510',
@@ -29,15 +29,15 @@ const DEPARTMENT_ROLES = {
       'LIEUTENANT': '1495801570250461367',
       'CAPTAIN': '1495801714476060672',
       'COMMANDER': '1495801714937167962',
-      'ASSISTANT CHIEF': '1493620509315698803',
-      'CHIEF': '1493620507889897473'
+      'LSPD DEPUTY CHIEF': '1493620509315698803',
+      'LSPD CHIEF': '1493620507889897473'
     }
   },
   ems: {
-    base: '1493620529309945876',
+    base: '1493620529309945876', // EMS
     ranks: {
       'EMS Chief': '1493620527238221984',
-      'EMS Co-Chief': '1493620528232005814',
+      'EMS Deputy Chief': '1493620528232005814',
       'EMS': '1493620529309945876',
       'Surgeon': '1493620531231064276',
       'Paramedic': '1493620530362974360',
@@ -46,9 +46,9 @@ const DEPARTMENT_ROLES = {
     }
   },
   mechanic: {
-    base: '1493620542824124558',
+    base: '1493620542824124558', // Mechanic
     ranks: {
-      'Mechanic Chief': '1493620541557571706',
+      'Mechanic Manager': '1493620541557571706',
       'Garage Manager': '1493620544107708477',
       'Asst Manager': '1493620544833191998',
       'Sr Mechanic': '1493620546418643086',
@@ -57,12 +57,13 @@ const DEPARTMENT_ROLES = {
     }
   },
   doj: {
-    base: '', // No specific base role provided
+    base: '1538436985180397658', // Department of Chief Justice
     ranks: {
       'Chief Justice': '1529050716780367964',
       'Attorney General': '1530221577218687197',
-      'District Attorney': '1534157824467144776',
-      'Public Defender': '1534157856360763503',
+      'Deputy Attorney General': '1534157824467144776',
+      'District Attorney': '1534157856360763503',
+      'Attorney': '1538436630073843813',
       'Legal Intern': '1534157877000933426'
     }
   }
