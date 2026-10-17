@@ -150,17 +150,24 @@ app.post('/api/notify-user', async (req, res) => {
     
     if (typeof config === 'string') {
       // Simple role ID (e.g., civilian)
-      rolesToAssign = [config];
+      if (config) rolesToAssign = [config];
     } else {
-      // Complex role object with ranks (e.g., police, ems, mechanic)
-      const baseRole = config.base;
+      // Complex role object with ranks (e.g., police, ems, mechanic, doj)
+      const baseRole = config.base; // May be empty string for DOJ
       const rankRole = config.ranks ? config.ranks[jobRank] : null;
-      rolesToAssign = [baseRole, rankRole].filter(id => !!id);
+      rolesToAssign = [baseRole, rankRole].filter(id => id && /^\d+$/.test(String(id)));
     }
     
+    console.log(`🏷️ Roles to assign for type='${typeKey}', jobRank='${jobRank}':`, rolesToAssign);
+    
     if (rolesToAssign.length > 0) {
-      await assignGuildRole(discordId, rolesToAssign);
+      const roleResult = await assignGuildRole(discordId, rolesToAssign);
+      console.log(`🏷️ Role assignment result:`, roleResult);
+    } else {
+      console.warn(`⚠️ No valid roles to assign for type='${typeKey}', jobRank='${jobRank}'. Check DEPARTMENT_ROLES config.`);
     }
+  } else if (status === 'approved') {
+    console.warn(`⚠️ No DEPARTMENT_ROLES config found for type='${typeKey}'. Role not assigned.`);
   }
 
   // Send notification to the department-specific Discord channel (ONLY for approved & rejected)

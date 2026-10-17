@@ -778,12 +778,12 @@ const AdminDashboard = () => {
         <div style={{
           position: 'fixed', top: '100px', right: '24px', padding: '14px 24px',
           borderRadius: '14px', fontWeight: 700, zIndex: 1000,
-          background: toast.type === 'success' ? '#A78BFA' : '#ef4444',
-          color: toast.type === 'success' ? '#000' : '#fff',
+          background: toast.type === 'success' ? '#22c55e' : toast.type === 'warning' ? '#f59e0b' : '#ef4444',
+          color: '#fff',
           boxShadow: '0 0 30px rgba(0,0,0,0.5)',
           animation: 'slide-up 0.3s ease-out',
         }}>
-          {toast.message}
+          {toast.type === 'success' ? '✅ ' : toast.type === 'warning' ? '⚠️ ' : '❌ '}{toast.message}
         </div>
       )}
 

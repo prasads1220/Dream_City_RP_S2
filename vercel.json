@@ -1,4 +1,9 @@
 {
+  "build": {
+    "env": {
+      "VITE_BACKEND_URL": "https://dream-city-rp-s2.onrender.com"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",

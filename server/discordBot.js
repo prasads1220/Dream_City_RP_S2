@@ -85,31 +85,51 @@ async function assignGuildRole(userId, roleIds) {
       ? await client.guilds.fetch(GUILD_ID) 
       : client.guilds.cache.first();
 
-    if (!guild) return { success: false, error: 'Guild not found' };
+    if (!guild) {
+      console.error('❌ assignGuildRole: Guild not found. Check DISCORD_GUILD_ID env var.');
+      return { success: false, error: 'Guild not found' };
+    }
 
     let member = null;
+    // Try by numeric ID first (most reliable)
     if (/^\d+$/.test(userId)) {
-      member = await guild.members.fetch(userId).catch(() => null);
+      member = await guild.members.fetch({ user: userId, force: true }).catch((e) => {
+        console.warn(`⚠️ Could not fetch member by ID ${userId}: ${e.message}`);
+        return null;
+      });
     }
     
+    // Fallback: search by username
     if (!member) {
+      console.log(`🔍 Searching member by username: ${userId}`);
       const members = await guild.members.fetch();
-      member = members.find(m => 
+      member = members.find(m =>
         m.user.username.toLowerCase() === userId.toLowerCase() || 
         m.user.tag.toLowerCase() === userId.toLowerCase()
       );
     }
 
-    if (!member) return { success: false, error: 'Member not found in server' };
+    if (!member) {
+      console.error(`❌ assignGuildRole: Member '${userId}' not found in server. Are they in the Discord?`);
+      return { success: false, error: 'Member not found in server' };
+    }
 
-    const idsToAdd = Array.isArray(roleIds) ? roleIds : [roleIds];
+    // Ensure all role IDs are strings and non-empty
+    const idsToAdd = (Array.isArray(roleIds) ? roleIds : [roleIds])
+      .map(id => String(id))
+      .filter(id => /^\d+$/.test(id));
+
+    if (idsToAdd.length === 0) {
+      console.warn('⚠️ assignGuildRole: No valid role IDs to assign.');
+      return { success: false, error: 'No valid role IDs provided' };
+    }
     
-    console.log(`⏳ Attempting to add roles ${idsToAdd.join(', ')} to ${member.user.tag}...`);
-    await member.roles.add(idsToAdd.filter(id => !!id));
-    console.log(`✅ Assigned roles to ${member.user.tag}`);
+    console.log(`⏳ Attempting to add roles [${idsToAdd.join(', ')}] to ${member.user.tag} (${member.user.id})...`);
+    await member.roles.add(idsToAdd);
+    console.log(`✅ Successfully assigned roles [${idsToAdd.join(', ')}] to ${member.user.tag}`);
     return { success: true };
   } catch (error) {
-    console.error(`❌ Failed to assign roles to ${userId}:`, error.message);
+    console.error(`❌ Failed to assign roles to '${userId}':`, error.message, '| Code:', error.code);
     return { success: false, error: error.message };
   }
 }
@@ -305,7 +325,7 @@ async function sendStatusDM(discordId, status, name, type = 'Whitelist', metadat
   }
 }
 
-// Department Channel IDs
+// Department Channel IDs (for approved/rejected notifications)
 const DEPARTMENT_CHANNELS = {
   civilian: '1497311768832249886',
   whitelist: '1497311768832249886',
@@ -314,6 +334,19 @@ const DEPARTMENT_CHANNELS = {
   mechanic: '1493620879798567035',
   doj: '1498015267987521616'
 };
+
+// New Application Notification Channels (where staff see NEW submissions)
+const NEW_APPLICATION_CHANNELS = {
+  civilian: '1497311768832249886',
+  whitelist: '1497311768832249886',
+  police: '1493620877231915150',
+  ems: '1500509643796119673',   // Special EMS review channel
+  mechanic: '1493620879798567035',
+  doj: '1498015267987521616'
+};
+
+// Admin log channel (fallback)
+const ADMIN_LOG_CHANNEL = '1498015267987521616';
 
 /**
  * Send a notification to the department-specific Discord channel
@@ -373,12 +406,11 @@ if (process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_BOT_TOKEN !== 'YOUR_DIS
  */
 async function sendNewApplicationNotification(name, discordId, type) {
   try {
-    let channelId = '1498015267987521616'; // Default admin log channel
+    const typeKey = (type || '').toLowerCase();
     
-    // Route EMS applications to specific channel if provided
-    if (type && type.toLowerCase() === 'ems') {
-      channelId = '1500509643796119673';
-    }
+    // Route to the correct department channel, fallback to admin log
+    const channelId = NEW_APPLICATION_CHANNELS[typeKey] || ADMIN_LOG_CHANNEL;
+    console.log(`📡 Routing new ${typeKey} application notification to channel: ${channelId}`);
 
     const channel = await client.channels.fetch(channelId);
     if (!channel) {
@@ -390,20 +422,27 @@ async function sendNewApplicationNotification(name, discordId, type) {
     
     const embed = {
       title: '📋 New Application Received',
-      description: `We have received the **${typeLabel}** application of **${name}** (<@${discordId}>).`,
+      description: `We have received the **${typeLabel}** application of **${name}** (<@${discordId}>).\n\n⏳ Please review it in the admin dashboard.`,
       color: 0x6c3ce1, // Purple accent color
       fields: [
         { name: '👤 Applicant', value: name, inline: true },
-        { name: '🎮 Discord ID', value: discordId, inline: true },
+        { name: '🎮 Discord ID', value: `<@${discordId}>`, inline: true },
         { name: '📋 Department', value: typeLabel, inline: true }
       ],
       timestamp: new Date().toISOString(),
       footer: { text: 'Dream City Roleplay S2 — Whitelist System' }
     };
 
+    // Mention relevant role for staff to notice it
     let content = undefined;
-    if (type && type.toLowerCase() === 'doj') {
+    if (typeKey === 'doj') {
       content = '<@&1534530579209654423>';
+    } else if (typeKey === 'police') {
+      content = '<@&1493620510465200230>'; // Police base role
+    } else if (typeKey === 'ems') {
+      content = '<@&1493620529309945876>'; // EMS base role
+    } else if (typeKey === 'mechanic') {
+      content = '<@&1493620542824124558>'; // Mechanic base role
     }
 
     await channel.send({ 
@@ -411,7 +450,7 @@ async function sendNewApplicationNotification(name, discordId, type) {
       embeds: [embed],
       allowedMentions: { parse: ['users', 'roles'] }
     });
-    console.log(`📢 New application notification sent to #${channel.name} for ${name}`);
+    console.log(`📢 New application notification sent to #${channel.name} for ${name} (${typeKey})`);
     return { success: true };
   } catch (error) {
     console.error(`❌ Failed to send new application notification:`, error.message);
