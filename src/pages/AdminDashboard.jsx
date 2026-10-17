@@ -447,10 +447,22 @@ const AdminDashboard = () => {
     try {
       const adminMessage = adminMessages[app.id] || '';
       
+      // 0. Pre-warm Render.com backend (free tier sleeps after inactivity)
+      let baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5000';
+      baseUrl = baseUrl.replace(/\/$/, '');
+      try {
+        setToast({ type: 'warning', message: '⏳ Waking up server...' });
+        await axios.get(`${baseUrl}/api/health`, { timeout: 60000 });
+      } catch (e) {
+        // Even if health check fails, try the real request anyway
+        console.warn('Pre-warm ping failed:', e.message);
+      }
+      
       // 1. Save rank to Firestore first
       if (rank) await updateApplicationMetadata(app.id, { jobRank: rank });
       
       // 2. Complete decision (Approved) + Notify with Rank
+      setToast({ type: 'warning', message: '📝 Processing approval...' });
       const metadata = rank ? { jobRank: rank, adminMessage } : { adminMessage };
       const result = await processApplicationDecision(app.id, 'approved', app, metadata);
       
@@ -467,7 +479,7 @@ const AdminDashboard = () => {
       setToast({ type: 'error', message: 'Approval failed.' });
     }
     setActionLoading(null);
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 5000);
   };
 
   const handleDelete = (id) => {

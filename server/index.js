@@ -127,6 +127,13 @@ app.post('/api/users', async (req, res) => {
 });
 
 /**
+ * Health check endpoint — used to pre-warm Render.com free tier
+ */
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: Date.now() });
+});
+
+/**
  * Notify User via Discord DM
  * POST /api/notify-user
  */
