@@ -110,7 +110,7 @@ async function assignGuildRole(userId, roleIds) {
 
     let member = null;
     // Try by numeric ID first (most reliable)
-
+    if (/^\d+$/.test(userId)) {
       member = await guild.members.fetch({ user: userId, force: true }).catch((e) => {
         console.warn(`⚠️ Could not fetch member by ID ${userId}: ${e.message}`);
         return null;
@@ -134,24 +134,17 @@ async function assignGuildRole(userId, roleIds) {
 
 
     const idsToAdd = (Array.isArray(roleIds) ? roleIds : [roleIds])
-
-
-
-
-
-
+      .filter(id => {
+        if (!id || typeof id !== 'string') return false;
+        if (!/^\d+$/.test(id)) {
+          console.warn(`⚠️ Skipping invalid role ID: ${id}`);
           return false;
         }
-
-
-
-          return false;
-        }
-
+        return true;
       });
 
     if (idsToAdd.length === 0) {
-
+      console.warn('⚠️ assignGuildRole: No valid role IDs provided.');
       return { success: false, error: 'No valid role IDs provided' };
     }
 
@@ -164,59 +157,6 @@ async function assignGuildRole(userId, roleIds) {
     return { success: false, error: error.message };
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-    }
-    
-
-
-
-
-
-
-
-
-
 
 /**
  * Surgically remove only department-specific roles from a user
