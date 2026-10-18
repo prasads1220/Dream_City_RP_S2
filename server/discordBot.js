@@ -346,18 +346,7 @@ const DEPARTMENT_CHANNELS = {
   doj: '1498015267987521616'
 };
 
-// New Application Notification Channels (where staff see NEW submissions)
-const NEW_APPLICATION_CHANNELS = {
-  civilian: '1497311768832249886',
-  whitelist: '1497311768832249886',
-  police: '1493620877231915150',
-  ems: '1500509643796119673',   // Special EMS review channel
-  mechanic: '1493620879798567035',
-  doj: '1498015267987521616'
-};
-
-// Admin log channel (fallback)
-const ADMIN_LOG_CHANNEL = '1498015267987521616';
+// Duplicate channel definitions removed
 
 /**
  * Send a notification to the department-specific Discord channel
