@@ -101,15 +101,22 @@ async function assignGuildRole(userId, roleIds) {
       return { success: false, error: 'Guild not found' };
     }
 
+    // Verify bot has permission to manage roles
+    const botMember = await guild.members.fetchMe();
+    if (!botMember.permissions.has('MANAGE_ROLES')) {
+      console.error('❌ assignGuildRole: Bot lacks MANAGE_ROLES permission.');
+      return { success: false, error: 'Missing MANAGE_ROLES permission' };
+    }
+
     let member = null;
     // Try by numeric ID first (most reliable)
-    if (/^\d+$/.test(userId)) {
+
       member = await guild.members.fetch({ user: userId, force: true }).catch((e) => {
         console.warn(`⚠️ Could not fetch member by ID ${userId}: ${e.message}`);
         return null;
       });
     }
-    
+
     // Fallback: search by username
     if (!member) {
       console.log(`🔍 Searching member by username: ${userId}`);
@@ -125,16 +132,29 @@ async function assignGuildRole(userId, roleIds) {
       return { success: false, error: 'Member not found in server' };
     }
 
-    // Ensure all role IDs are strings and non-empty
+
     const idsToAdd = (Array.isArray(roleIds) ? roleIds : [roleIds])
-      .map(id => String(id))
-      .filter(id => /^\d+$/.test(id));
+
+
+
+
+
+
+          return false;
+        }
+
+
+
+          return false;
+        }
+
+      });
 
     if (idsToAdd.length === 0) {
-      console.warn('⚠️ assignGuildRole: No valid role IDs to assign.');
+
       return { success: false, error: 'No valid role IDs provided' };
     }
-    
+
     console.log(`⏳ Attempting to add roles [${idsToAdd.join(', ')}] to ${member.user.tag} (${member.user.id})...`);
     await member.roles.add(idsToAdd);
     console.log(`✅ Successfully assigned roles [${idsToAdd.join(', ')}] to ${member.user.tag}`);
@@ -144,6 +164,59 @@ async function assignGuildRole(userId, roleIds) {
     return { success: false, error: error.message };
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+    }
+    
+
+
+
+
+
+
+
+
+
 
 /**
  * Surgically remove only department-specific roles from a user
