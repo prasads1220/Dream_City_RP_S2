@@ -69,6 +69,16 @@ const DEPARTMENT_ROLES = {
   }
 };
 
+// Channel IDs for new application notifications per department
+const NEW_APPLICATION_CHANNELS = {
+  police: '1493620877231915150', // LSPD applications channel
+  ems: '1493620878938734662', // EMS applications channel
+  mechanic: '1493620879798567035', // Mechanic applications channel
+  doj: '1534530812731592840' // DOJ applications channel
+};
+// Optional fallback admin log channel (can be set via env var)
+const ADMIN_LOG_CHANNEL = process.env.DISCORD_ADMIN_LOG_CHANNEL || NEW_APPLICATION_CHANNELS.police; // default to police channel
+
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
 
 client.once('ready', (c) => {
